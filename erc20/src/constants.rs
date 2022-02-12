@@ -14,6 +14,8 @@ pub const BALANCES_KEY_NAME: &str = "balances";
 pub const ALLOWANCES_KEY_NAME: &str = "allowances";
 /// Name of named-key for `total_supply`
 pub const TOTAL_SUPPLY_KEY_NAME: &str = "total_supply";
+/// Name of named-key for `minter`
+pub const MINTER_KEY_NAME: &str = "minter";
 
 /// Name of `name` entry point.
 pub const NAME_ENTRY_POINT_NAME: &str = "name";
@@ -25,6 +27,8 @@ pub const DECIMALS_ENTRY_POINT_NAME: &str = "decimals";
 pub const BALANCE_OF_ENTRY_POINT_NAME: &str = "balance_of";
 /// Name of `transfer` entry point.
 pub const TRANSFER_ENTRY_POINT_NAME: &str = "transfer";
+/// Name of `mint` entry point.
+pub const MINT_ENTRY_POINT_NAME: &str = "mint";
 /// Name of `approve` entry point.
 pub const APPROVE_ENTRY_POINT_NAME: &str = "approve";
 /// Name of `allowance` entry point.
@@ -33,6 +37,10 @@ pub const ALLOWANCE_ENTRY_POINT_NAME: &str = "allowance";
 pub const TRANSFER_FROM_ENTRY_POINT_NAME: &str = "transfer_from";
 /// Name of `total_supply` entry point.
 pub const TOTAL_SUPPLY_ENTRY_POINT_NAME: &str = "total_supply";
+/// Name of `minter` entry point.
+pub const MINTER_ENTRY_POINT_NAME: &str = "mint";
+/// Name of `burn` entry point.
+pub const BURN_ENTRY_POINT_NAME: &str = "burn";
 
 /// Name of `address` runtime argument.
 pub const ADDRESS_RUNTIME_ARG_NAME: &str = "address";
@@ -52,3 +60,5 @@ pub const SYMBOL_RUNTIME_ARG_NAME: &str = "symbol";
 pub const DECIMALS_RUNTIME_ARG_NAME: &str = "decimals";
 /// Name of `total_supply` runtime argument.
 pub const TOTAL_SUPPLY_RUNTIME_ARG_NAME: &str = "total_supply";
+/// Name of `minter` runtime argument.
+pub const MINTER_RUNTIME_ARG_NAME: &str = "minter";

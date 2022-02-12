@@ -46,6 +46,7 @@ impl TestToken {
         let symbol: String = TOKEN_SYMBOL.to_string();
         let decimals = TOKEN_DECIMALS;
         let total_supply = U256::from(TOKEN_TOTAL_SUPPLY);
+        let minter = TOKEN_OWNER_ADDRESS_1;
 
         let mut entry_points = EntryPoints::new();
 
@@ -90,6 +91,7 @@ impl TestToken {
             symbol,
             decimals,
             total_supply,
+            minter,
             TEST_CONTRACT_KEY_NAME,
             entry_points,
         )?;
@@ -135,7 +137,7 @@ pub extern "C" fn mint() {
 pub extern "C" fn burn() {
     let owner: Address = runtime::get_named_arg(OWNER_RUNTIME_ARG_NAME);
     let amount: U256 = runtime::get_named_arg(AMOUNT_RUNTIME_ARG_NAME);
-    TestToken::default().burn(owner, amount).unwrap_or_revert();
+    TestToken::default().burn(amount).unwrap_or_revert();
 }
 
 #[no_mangle]

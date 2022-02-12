@@ -13,7 +13,7 @@ use casper_erc20::{
     constants::{
         ADDRESS_RUNTIME_ARG_NAME, AMOUNT_RUNTIME_ARG_NAME, DECIMALS_RUNTIME_ARG_NAME,
         NAME_RUNTIME_ARG_NAME, OWNER_RUNTIME_ARG_NAME, RECIPIENT_RUNTIME_ARG_NAME,
-        SPENDER_RUNTIME_ARG_NAME, SYMBOL_RUNTIME_ARG_NAME, TOTAL_SUPPLY_RUNTIME_ARG_NAME,
+        SPENDER_RUNTIME_ARG_NAME, SYMBOL_RUNTIME_ARG_NAME, TOTAL_SUPPLY_RUNTIME_ARG_NAME, MINTER_RUNTIME_ARG_NAME
     },
     Address, ERC20,
 };
@@ -92,6 +92,7 @@ fn call() {
     let symbol: String = runtime::get_named_arg(SYMBOL_RUNTIME_ARG_NAME);
     let decimals = runtime::get_named_arg(DECIMALS_RUNTIME_ARG_NAME);
     let total_supply = runtime::get_named_arg(TOTAL_SUPPLY_RUNTIME_ARG_NAME);
+    let minter = runtime::get_named_arg(MINTER_RUNTIME_ARG_NAME);
 
-    let _token = ERC20::install(name, symbol, decimals, total_supply).unwrap_or_revert();
+    let _token = ERC20::install(name, symbol, decimals, total_supply, minter).unwrap_or_revert();
 }

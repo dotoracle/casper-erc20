@@ -22,6 +22,7 @@ pub mod constants;
 mod detail;
 pub mod entry_points;
 mod error;
+mod minter;
 mod total_supply;
 
 use alloc::string::{String, ToString};
@@ -37,7 +38,7 @@ use casper_types::{contracts::NamedKeys, EntryPoints, Key, URef, U256};
 pub use address::Address;
 use constants::{
     ALLOWANCES_KEY_NAME, BALANCES_KEY_NAME, DECIMALS_KEY_NAME, ERC20_TOKEN_CONTRACT_KEY_NAME,
-    NAME_KEY_NAME, SYMBOL_KEY_NAME, TOTAL_SUPPLY_KEY_NAME,
+    MINTER_KEY_NAME, NAME_KEY_NAME, SYMBOL_KEY_NAME, TOTAL_SUPPLY_KEY_NAME,
 };
 pub use error::Error;
 
@@ -47,14 +48,21 @@ pub struct ERC20 {
     balances_uref: OnceCell<URef>,
     allowances_uref: OnceCell<URef>,
     total_supply_uref: OnceCell<URef>,
+    minter_uref: OnceCell<URef>,
 }
 
 impl ERC20 {
-    fn new(balances_uref: URef, allowances_uref: URef, total_supply_uref: URef) -> Self {
+    fn new(
+        balances_uref: URef,
+        allowances_uref: URef,
+        total_supply_uref: URef,
+        minter_uref: URef,
+    ) -> Self {
         Self {
             balances_uref: balances_uref.into(),
             allowances_uref: allowances_uref.into(),
             total_supply_uref: total_supply_uref.into(),
+            minter_uref: minter_uref.into(),
         }
     }
 
@@ -64,12 +72,24 @@ impl ERC20 {
             .get_or_init(total_supply::total_supply_uref)
     }
 
+    fn minter_uref(&self) -> URef {
+        *self.minter_uref.get_or_init(minter::minter_uref)
+    }
+
     fn read_total_supply(&self) -> U256 {
         total_supply::read_total_supply_from(self.total_supply_uref())
     }
 
     fn write_total_supply(&self, total_supply: U256) {
         total_supply::write_total_supply_to(self.total_supply_uref(), total_supply)
+    }
+
+    fn read_minter(&self) -> Address {
+        minter::read_minter_from(self.minter_uref())
+    }
+
+    fn write_minter(&self, minter: Address) {
+        minter::write_minter_to(self.minter_uref(), minter)
     }
 
     fn balances_uref(&self) -> URef {
@@ -115,6 +135,7 @@ impl ERC20 {
         symbol: String,
         decimals: u8,
         initial_supply: U256,
+        minter: Address,
     ) -> Result<ERC20, Error> {
         let default_entry_points = entry_points::default();
         ERC20::install_custom(
@@ -122,6 +143,7 @@ impl ERC20 {
             symbol,
             decimals,
             initial_supply,
+            minter,
             ERC20_TOKEN_CONTRACT_KEY_NAME,
             default_entry_points,
         )
@@ -198,6 +220,10 @@ impl ERC20 {
     /// This offers no security whatsoever, hence it is advised to NOT expose this method through a
     /// public entry point.
     pub fn mint(&mut self, owner: Address, amount: U256) -> Result<(), Error> {
+        let _caller = detail::get_immediate_caller_address()?;
+        if _caller != self.read_minter() {
+            runtime::revert(Error::NoAccessRights);
+        }
         let new_balance = {
             let balance = self.read_balance(owner);
             balance.checked_add(amount).ok_or(Error::Overflow)?
@@ -211,6 +237,12 @@ impl ERC20 {
         Ok(())
     }
 
+    pub fn burn(&mut self, amount: U256) -> Result<(), Error> {
+        let _owner = detail::get_immediate_caller_address()?;
+        self.burn_token(_owner, amount);
+        Ok(())
+    }
+
     /// Burns (i.e. subtracts) `amount` of tokens from `owner`'s balance and from the token total
     /// supply.
     ///
@@ -218,7 +250,7 @@ impl ERC20 {
     ///
     /// This offers no security whatsoever, hence it is advised to NOT expose this method through a
     /// public entry point.
-    pub fn burn(&mut self, owner: Address, amount: U256) -> Result<(), Error> {
+    fn burn_token(&mut self, owner: Address, amount: U256) -> Result<(), Error> {
         let new_balance = {
             let balance = self.read_balance(owner);
             balance
@@ -247,6 +279,7 @@ impl ERC20 {
         symbol: String,
         decimals: u8,
         initial_supply: U256,
+        minter: Address,
         contract_key_name: &str,
         entry_points: EntryPoints,
     ) -> Result<ERC20, Error> {
@@ -254,6 +287,8 @@ impl ERC20 {
         let allowances_uref = storage::new_dictionary(ALLOWANCES_KEY_NAME).unwrap_or_revert();
         // We need to hold on a RW access rights because tokens can be minted or burned.
         let total_supply_uref = storage::new_uref(initial_supply).into_read_write();
+
+        let minter_uref = storage::new_uref(minter).into_read_write();
 
         let mut named_keys = NamedKeys::new();
 
@@ -273,6 +308,8 @@ impl ERC20 {
         };
 
         let total_supply_key = Key::from(total_supply_uref);
+
+        let minter_key = Key::from(minter_uref);
 
         let balances_dictionary_key = {
             // Sets up initial balance for the caller - either an account, or a contract.
@@ -296,6 +333,7 @@ impl ERC20 {
         named_keys.insert(BALANCES_KEY_NAME.to_string(), balances_dictionary_key);
         named_keys.insert(ALLOWANCES_KEY_NAME.to_string(), allowances_dictionary_key);
         named_keys.insert(TOTAL_SUPPLY_KEY_NAME.to_string(), total_supply_key);
+        named_keys.insert(MINTER_KEY_NAME.to_string(), minter_key);
 
         let (contract_hash, _version) =
             storage::new_locked_contract(entry_points, Some(named_keys), None, None);
@@ -307,6 +345,7 @@ impl ERC20 {
             balances_uref,
             allowances_uref,
             total_supply_uref,
+            minter_uref,
         ))
     }
 }

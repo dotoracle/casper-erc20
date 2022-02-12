@@ -20,6 +20,7 @@ pub enum Error {
     InsufficientAllowance,
     /// Operation would cause an integer overflow.
     Overflow,
+    NoAccessRights,
     /// User error.
     User(u16),
 }
@@ -28,7 +29,7 @@ const ERROR_INVALID_CONTEXT: u16 = u16::MAX;
 const ERROR_INSUFFICIENT_BALANCE: u16 = u16::MAX - 1;
 const ERROR_INSUFFICIENT_ALLOWANCE: u16 = u16::MAX - 2;
 const ERROR_OVERFLOW: u16 = u16::MAX - 3;
-
+const NO_ACCESS_RIGHTS: u16 = u16::MAX - 4;
 impl From<Error> for ApiError {
     fn from(error: Error) -> Self {
         let user_error = match error {
@@ -36,6 +37,7 @@ impl From<Error> for ApiError {
             Error::InsufficientBalance => ERROR_INSUFFICIENT_BALANCE,
             Error::InsufficientAllowance => ERROR_INSUFFICIENT_ALLOWANCE,
             Error::Overflow => ERROR_OVERFLOW,
+            Error::NoAccessRights => NO_ACCESS_RIGHTS,
             Error::User(user_error) => user_error,
         };
         ApiError::User(user_error)
