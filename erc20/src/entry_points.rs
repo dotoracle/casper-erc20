@@ -10,10 +10,11 @@ use crate::{
     constants::{
         ADDRESS_RUNTIME_ARG_NAME, ALLOWANCE_ENTRY_POINT_NAME, AMOUNT_RUNTIME_ARG_NAME,
         APPROVE_ENTRY_POINT_NAME, BALANCE_OF_ENTRY_POINT_NAME, BURN_ENTRY_POINT_NAME,
-        DECIMALS_ENTRY_POINT_NAME, MINT_ENTRY_POINT_NAME, NAME_ENTRY_POINT_NAME,
+        CHANGE_MINTER_ENTRY_POINT_NAME, DECIMALS_ENTRY_POINT_NAME, MINTER_ENTRY_POINT_NAME,
+        MINTER_RUNTIME_ARG_NAME, MINT_ENTRY_POINT_NAME, NAME_ENTRY_POINT_NAME,
         OWNER_RUNTIME_ARG_NAME, RECIPIENT_RUNTIME_ARG_NAME, SPENDER_RUNTIME_ARG_NAME,
         SYMBOL_ENTRY_POINT_NAME, TOTAL_SUPPLY_ENTRY_POINT_NAME, TRANSFER_ENTRY_POINT_NAME,
-        TRANSFER_FROM_ENTRY_POINT_NAME, MINTER_ENTRY_POINT_NAME
+        TRANSFER_FROM_ENTRY_POINT_NAME,
     },
 };
 
@@ -44,6 +45,17 @@ pub fn minter() -> EntryPoint {
     EntryPoint::new(
         String::from(MINTER_ENTRY_POINT_NAME),
         Vec::new(),
+        String::cl_type(),
+        EntryPointAccess::Public,
+        EntryPointType::Contract,
+    )
+}
+
+/// Returns the `minter` entry point.
+pub fn change_minter() -> EntryPoint {
+    EntryPoint::new(
+        String::from(CHANGE_MINTER_ENTRY_POINT_NAME),
+        vec![Parameter::new(MINTER_RUNTIME_ARG_NAME, Address::cl_type())],
         String::cl_type(),
         EntryPointAccess::Public,
         EntryPointType::Contract,
@@ -178,5 +190,6 @@ pub fn default() -> EntryPoints {
     entry_points.add_entry_point(transfer_from());
     entry_points.add_entry_point(mint());
     entry_points.add_entry_point(burn());
+    entry_points.add_entry_point(change_minter());
     entry_points
 }

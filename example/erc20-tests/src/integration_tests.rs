@@ -110,6 +110,27 @@ mod tests {
         );
     }
 
+    #[test]
+    fn should_change_minter_success() {
+        let mut fixture = TestFixture::install_contract();
+
+        let mut current_minter = fixture.get_minter();
+        assert_eq!(current_minter, fixture.minter.to_formatted_string());
+
+        fixture.change_minter(fixture.bob.to_formatted_string(), Sender(fixture.minter));
+
+        current_minter = fixture.get_minter();
+        assert_eq!(current_minter, fixture.bob.to_formatted_string());
+    }
+
+    #[should_panic(expected = "ApiError::User(65531) [131067]")]
+    #[test]
+    fn should_not_mint_without_authorization() {
+        let mut fixture = TestFixture::install_contract();
+
+        fixture.mint(Key::from(fixture.bob), U256::from(20), Sender(fixture.bob));
+    }
+
     #[should_panic(expected = "ApiError::User(65534) [131070]")]
     #[test]
     fn should_not_transfer_with_insufficient_balance() {

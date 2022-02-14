@@ -141,6 +141,16 @@ impl TestFixture {
         self.query_contract(consts::MINTER_RUNTIME_ARG_NAME).unwrap()
     }
 
+    pub fn change_minter(&mut self, newMinter: String, sender: Sender) {
+        self.call(
+            sender,
+            consts::CHANGE_MINTER_ENTRY_POINT_NAME,
+            runtime_args! {
+                consts::MINTER_RUNTIME_ARG_NAME => newMinter
+            },
+        );
+    }
+
     pub fn allowance(&self, owner: Key, spender: Key) -> Option<U256> {
         let mut preimage = Vec::new();
         preimage.append(&mut owner.to_bytes().unwrap());

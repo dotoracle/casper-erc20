@@ -70,10 +70,17 @@ pub extern "C" fn approve() {
 
 #[no_mangle]
 pub extern "C" fn mint() {
-    let spender: Address = runtime::get_named_arg(RECIPIENT_RUNTIME_ARG_NAME);
+    let recipient: Address = runtime::get_named_arg(RECIPIENT_RUNTIME_ARG_NAME);
     let amount: U256 = runtime::get_named_arg(AMOUNT_RUNTIME_ARG_NAME);
 
-    ERC20::default().mint(spender, amount).unwrap_or_revert();
+    ERC20::default().mint(recipient, amount).unwrap_or_revert();
+}
+
+#[no_mangle]
+pub extern "C" fn change_minter() {
+    let newMinter: String = runtime::get_named_arg(MINTER_RUNTIME_ARG_NAME);
+
+    ERC20::default().change_minter(newMinter).unwrap_or_revert();
 }
 
 #[no_mangle]

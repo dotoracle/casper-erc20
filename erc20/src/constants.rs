@@ -41,6 +41,8 @@ pub const TOTAL_SUPPLY_ENTRY_POINT_NAME: &str = "total_supply";
 pub const MINTER_ENTRY_POINT_NAME: &str = "mint";
 /// Name of `burn` entry point.
 pub const BURN_ENTRY_POINT_NAME: &str = "burn";
+/// Name of `change_minter` entry point.
+pub const CHANGE_MINTER_ENTRY_POINT_NAME: &str = "change_minter";
 
 /// Name of `address` runtime argument.
 pub const ADDRESS_RUNTIME_ARG_NAME: &str = "address";

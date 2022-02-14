@@ -243,6 +243,19 @@ impl ERC20 {
         self.write_total_supply(new_total_supply);
         Ok(())
     }
+
+    /// Change minter: only current minter can change
+    pub fn change_minter(&mut self, newMinter: String) -> Result<(), Error> {
+        let _caller = detail::get_immediate_caller_address()?;
+        let _caller_accounthash = _caller.as_account_hash().unwrap();
+        let _current_minter = self.read_minter();
+        if *_caller_accounthash.to_formatted_string() != _current_minter {
+            runtime::revert(Error::NoAccessRights);
+        }
+        self.write_minter(newMinter);
+        Ok(())
+    }
+
     /// Burns (i.e. subtracts) `amount` of tokens from `owner`'s balance and from the token total
     /// supply.
     ///
