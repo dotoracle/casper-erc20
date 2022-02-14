@@ -102,11 +102,8 @@ mod tests {
             Some(U256::zero())
         );
 
-        let _minter = fixture.get_minter();
-        println!("Minter");
-
-        // //mint
-        fixture.mint(Key::from(fixture.bob), U256::from(20), Sender(fixture.bob));
+        //mint
+        fixture.mint(Key::from(fixture.bob), U256::from(20), Sender(fixture.ali));
         assert_eq!(
             fixture.balance_of(Key::from(fixture.bob)),
             Some(U256::from(20))
