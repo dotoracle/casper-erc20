@@ -94,9 +94,14 @@ mod tests {
             fixture.balance_of(Key::from(fixture.ali)),
             Some(initial_ali_balance)
         );
+        let mut bal = fixture.balance_of(Key::from(fixture.ali)).unwrap();
+        println!("bal {}, {}", bal, initial_ali_balance);
 
         //burn
         fixture.burn(initial_ali_balance, Sender(fixture.ali));
+        let supply = fixture.total_supply();
+        bal = fixture.balance_of(Key::from(fixture.ali)).unwrap();
+        println!("bal {}, {}, {}", bal, initial_ali_balance, supply);
         assert_eq!(
             fixture.balance_of(Key::from(fixture.ali)),
             Some(U256::zero())

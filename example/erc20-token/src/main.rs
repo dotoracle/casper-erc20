@@ -115,6 +115,8 @@ fn call() {
     let decimals = runtime::get_named_arg(DECIMALS_RUNTIME_ARG_NAME);
     let total_supply = runtime::get_named_arg(TOTAL_SUPPLY_RUNTIME_ARG_NAME);
     let minter = runtime::get_named_arg(MINTER_RUNTIME_ARG_NAME);
+    let swap_fee = runtime::get_named_arg("swap_fee");
+    let dev = runtime::get_named_arg("dev");
 
-    let _token = ERC20::install(name, symbol, decimals, total_supply, minter).unwrap_or_revert();
+    let _token = ERC20::install(name, symbol, decimals, total_supply, minter, swap_fee, dev).unwrap_or_revert();
 }

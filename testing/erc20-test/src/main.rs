@@ -49,7 +49,14 @@ impl TestToken {
         let symbol: String = TOKEN_SYMBOL.to_string();
         let decimals = TOKEN_DECIMALS;
         let total_supply = U256::from(TOKEN_TOTAL_SUPPLY);
-        let minter = TOKEN_OWNER_ADDRESS_1.as_account_hash().unwrap().to_formatted_string();
+        let minter = TOKEN_OWNER_ADDRESS_1
+            .as_account_hash()
+            .unwrap()
+            .to_formatted_string();
+        let dev = TOKEN_OWNER_ADDRESS_2
+            .as_account_hash()
+            .unwrap()
+            .to_formatted_string();
 
         let mut entry_points = EntryPoints::new();
 
@@ -95,6 +102,8 @@ impl TestToken {
             decimals,
             total_supply,
             minter,
+            U256::zero(),
+            dev,
             TEST_CONTRACT_KEY_NAME,
             entry_points,
         )?;

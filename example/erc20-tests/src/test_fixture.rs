@@ -26,7 +26,8 @@ pub struct TestFixture {
     pub ali: AccountHash,
     pub bob: AccountHash,
     pub joe: AccountHash,
-    pub minter: AccountHash
+    pub minter: AccountHash,
+    pub dev: AccountHash
 }
 
 impl TestFixture {
@@ -43,7 +44,7 @@ impl TestFixture {
         let ali = PublicKey::ed25519_from_bytes([3u8; 32]).unwrap();
         let bob = PublicKey::ed25519_from_bytes([6u8; 32]).unwrap();
         let joe = PublicKey::ed25519_from_bytes([9u8; 32]).unwrap();
-
+        let dev = PublicKey::ed25519_from_bytes([6u8; 32]).unwrap();
         let mut context = TestContextBuilder::new()
             .with_public_key(ali.clone(), U512::from(500_000_000_000_000_000u64))
             .with_public_key(bob.clone(), U512::from(500_000_000_000_000_000u64))
@@ -55,7 +56,10 @@ impl TestFixture {
             consts::SYMBOL_RUNTIME_ARG_NAME => TestFixture::TOKEN_SYMBOL,
             consts::DECIMALS_RUNTIME_ARG_NAME => TestFixture::TOKEN_DECIMALS,
             consts::TOTAL_SUPPLY_RUNTIME_ARG_NAME => TestFixture::token_total_supply(),
-            consts::MINTER_RUNTIME_ARG_NAME => Key::from(ali.to_account_hash()).to_formatted_string()
+            consts::MINTER_RUNTIME_ARG_NAME => Key::from(ali.to_account_hash()).to_formatted_string(),
+            "swap_fee" => U256::zero(),
+            "dev" => Key::from(dev.to_account_hash()).to_formatted_string()
+
         };
 
         let session = SessionBuilder::new(session_code, session_args)
@@ -69,7 +73,8 @@ impl TestFixture {
             ali: ali.to_account_hash(),
             bob: bob.to_account_hash(),
             joe: joe.to_account_hash(),
-            minter: ali.to_account_hash()
+            minter: ali.to_account_hash(),
+            dev: dev.to_account_hash()
         }
     }
 
@@ -139,6 +144,10 @@ impl TestFixture {
 
     pub fn get_minter(&self) -> String {
         self.query_contract(consts::MINTER_RUNTIME_ARG_NAME).unwrap()
+    }
+
+    pub fn total_supply(&self) -> U256 {
+        self.query_contract(consts::TOTAL_SUPPLY_KEY_NAME).unwrap()
     }
 
     pub fn change_minter(&mut self, newMinter: String, sender: Sender) {

@@ -22,8 +22,7 @@ pub mod constants;
 mod detail;
 pub mod entry_points;
 mod error;
-mod minter;
-mod total_supply;
+mod dict;
 
 use alloc::string::{String, ToString};
 
@@ -49,6 +48,8 @@ pub struct ERC20 {
     allowances_uref: OnceCell<URef>,
     total_supply_uref: OnceCell<URef>,
     minter_uref: OnceCell<URef>,
+    swap_fee_uref: OnceCell<URef>,
+    dev_uref: OnceCell<URef>
 }
 
 impl ERC20 {
@@ -57,39 +58,71 @@ impl ERC20 {
         allowances_uref: URef,
         total_supply_uref: URef,
         minter_uref: URef,
+        swap_fee_uref: URef,
+        dev_uref: URef
     ) -> Self {
         Self {
             balances_uref: balances_uref.into(),
             allowances_uref: allowances_uref.into(),
             total_supply_uref: total_supply_uref.into(),
             minter_uref: minter_uref.into(),
+            swap_fee_uref: swap_fee_uref.into(),
+            dev_uref: dev_uref.into()
         }
     }
 
     fn total_supply_uref(&self) -> URef {
         *self
             .total_supply_uref
-            .get_or_init(total_supply::total_supply_uref)
+            .get_or_init(dict::get_uref_total_supply)
+    }
+
+    fn swap_fee_uref(&self) -> URef {
+        *self
+            .swap_fee_uref
+            .get_or_init(dict::get_uref_swap_fee)
+    }
+
+    fn dev_uref(&self) -> URef {
+        *self
+            .swap_fee_uref
+            .get_or_init(dict::get_uref_dev)
     }
 
     fn minter_uref(&self) -> URef {
-        *self.minter_uref.get_or_init(minter::minter_uref)
+        *self.minter_uref.get_or_init(dict::get_uref_minter)
     }
 
     fn read_total_supply(&self) -> U256 {
-        total_supply::read_total_supply_from(self.total_supply_uref())
+        dict::read_total_supply_from(self.total_supply_uref())
     }
 
     fn write_total_supply(&self, total_supply: U256) {
-        total_supply::write_total_supply_to(self.total_supply_uref(), total_supply)
+        dict::write_total_supply_to(self.total_supply_uref(), total_supply)
+    }
+
+    fn read_swap_fee(&self) -> U256 {
+        dict::read_swap_fee_from(self.swap_fee_uref())
+    }
+
+    fn write_swap_fee(&self, swap_fee: U256) {
+        dict::write_swap_fee_to(self.swap_fee_uref(), swap_fee)
+    }
+
+    fn read_dev(&self) -> String {
+        dict::read_dev_from(self.dev_uref())
+    }
+
+    fn write_dev(&self, dev: String) {
+        dict::write_dev_to(self.dev_uref(), dev)
     }
 
     fn read_minter(&self) -> String {
-        minter::read_minter_from(self.minter_uref())
+        dict::read_minter_from(self.minter_uref())
     }
 
     fn write_minter(&self, minter: String) {
-        minter::write_minter_to(self.minter_uref(), minter)
+        dict::write_minter_to(self.minter_uref(), minter)
     }
 
     fn balances_uref(&self) -> URef {
@@ -136,6 +169,8 @@ impl ERC20 {
         decimals: u8,
         initial_supply: U256,
         minter: String,
+        swap_fee: U256,
+        dev: String
     ) -> Result<ERC20, Error> {
         let default_entry_points = entry_points::default();
         ERC20::install_custom(
@@ -144,6 +179,8 @@ impl ERC20 {
             decimals,
             initial_supply,
             minter,
+            swap_fee,
+            dev,
             ERC20_TOKEN_CONTRACT_KEY_NAME,
             default_entry_points,
         )
@@ -306,15 +343,20 @@ impl ERC20 {
         decimals: u8,
         initial_supply: U256,
         minter: String,
+        swap_fee: U256,
+        dev: String,
         contract_key_name: &str,
         entry_points: EntryPoints,
     ) -> Result<ERC20, Error> {
         let balances_uref = storage::new_dictionary(BALANCES_KEY_NAME).unwrap_or_revert();
         let allowances_uref = storage::new_dictionary(ALLOWANCES_KEY_NAME).unwrap_or_revert();
         // We need to hold on a RW access rights because tokens can be minted or burned.
-        let total_supply_uref = storage::new_uref(initial_supply).into_read_write();
+        let total_supply_uref = storage::new_uref(swap_fee).into_read_write();
+        
+        let swap_fee_uref = storage::new_uref(initial_supply).into_read_write();
 
         let minter_uref = storage::new_uref(minter).into_read_write();
+        let dev_uref = storage::new_uref(dev).into_read_write();
 
         let mut named_keys = NamedKeys::new();
 
@@ -334,8 +376,9 @@ impl ERC20 {
         };
 
         let total_supply_key = Key::from(total_supply_uref);
-
+        let swap_fee_key = Key::from(swap_fee_uref);
         let minter_key = Key::from(minter_uref);
+        let dev_key = Key::from(dev_uref);
 
         let balances_dictionary_key = {
             // Sets up initial balance for the caller - either an account, or a contract.
@@ -360,6 +403,8 @@ impl ERC20 {
         named_keys.insert(ALLOWANCES_KEY_NAME.to_string(), allowances_dictionary_key);
         named_keys.insert(TOTAL_SUPPLY_KEY_NAME.to_string(), total_supply_key);
         named_keys.insert(MINTER_KEY_NAME.to_string(), minter_key);
+        named_keys.insert("swap_fee".to_string(), swap_fee_key);
+        named_keys.insert("dev".to_string(), dev_key);
 
         let (contract_hash, _version) =
             storage::new_locked_contract(entry_points, Some(named_keys), None, None);
@@ -372,6 +417,8 @@ impl ERC20 {
             allowances_uref,
             total_supply_uref,
             minter_uref,
+            swap_fee_uref,
+            dev_uref
         ))
     }
 }
