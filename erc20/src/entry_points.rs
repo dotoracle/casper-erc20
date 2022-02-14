@@ -176,6 +176,28 @@ pub fn decimals() -> EntryPoint {
     )
 }
 
+/// Returns the `dev` entry point.
+pub fn dev() -> EntryPoint {
+    EntryPoint::new(
+        String::from("dev"),
+        Vec::new(),
+        String::cl_type(),
+        EntryPointAccess::Public,
+        EntryPointType::Contract,
+    )
+}
+
+/// Returns the `dev` entry point.
+pub fn swap_fee() -> EntryPoint {
+    EntryPoint::new(
+        String::from("swap_fee"),
+        Vec::new(),
+        U256::cl_type(),
+        EntryPointAccess::Public,
+        EntryPointType::Contract,
+    )
+}
+
 /// Returns the default set of ERC20 token entry points.
 pub fn default() -> EntryPoints {
     let mut entry_points = EntryPoints::new();
@@ -191,5 +213,7 @@ pub fn default() -> EntryPoints {
     entry_points.add_entry_point(mint());
     entry_points.add_entry_point(burn());
     entry_points.add_entry_point(change_minter());
+    entry_points.add_entry_point(dev());
+    entry_points.add_entry_point(swap_fee());
     entry_points
 }

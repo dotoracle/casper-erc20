@@ -107,12 +107,39 @@ mod tests {
             Some(U256::zero())
         );
 
+        let dev = fixture.dev();
+        println!("dev {}", dev);
+
         //mint
         fixture.mint(Key::from(fixture.bob), U256::from(20), Sender(fixture.ali));
         assert_eq!(
             fixture.balance_of(Key::from(fixture.bob)),
             Some(U256::from(20))
         );
+    }
+
+    fn should_mint_with_fee() {
+        let mut fixture = TestFixture::install_contract();
+
+        let initial_ali_balance = fixture.balance_of(Key::from(fixture.ali)).unwrap();
+        assert_eq!(fixture.balance_of(Key::from(fixture.bob)), None);
+
+        let mut dev_balance = fixture.balance_of(Key::from(fixture.dev)).unwrap();
+        assert_eq!(dev_balance, U256::zero());
+
+        let mut bob_balance = fixture.balance_of(Key::from(fixture.bob)).unwrap();
+        assert_eq!(bob_balance, U256::zero());
+
+        //change dev fee
+        fixture.change_swap_fee(U256::from(10), Sender(fixture.dev));
+        //mint 1000
+        fixture.mint(Key::from(fixture.bob), U256::from(1000), Sender(fixture.minter));
+
+        dev_balance = fixture.balance_of(Key::from(fixture.dev)).unwrap();
+        assert_eq!(dev_balance, U256::from(10));
+
+        bob_balance = fixture.balance_of(Key::from(fixture.bob)).unwrap();
+        assert_eq!(bob_balance, U256::from(1000 - 10));
     }
 
     #[test]

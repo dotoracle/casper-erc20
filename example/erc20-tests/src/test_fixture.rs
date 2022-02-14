@@ -44,7 +44,7 @@ impl TestFixture {
         let ali = PublicKey::ed25519_from_bytes([3u8; 32]).unwrap();
         let bob = PublicKey::ed25519_from_bytes([6u8; 32]).unwrap();
         let joe = PublicKey::ed25519_from_bytes([9u8; 32]).unwrap();
-        let dev = PublicKey::ed25519_from_bytes([6u8; 32]).unwrap();
+        let dev = PublicKey::ed25519_from_bytes([12u8; 32]).unwrap();
         let mut context = TestContextBuilder::new()
             .with_public_key(ali.clone(), U512::from(500_000_000_000_000_000u64))
             .with_public_key(bob.clone(), U512::from(500_000_000_000_000_000u64))
@@ -59,7 +59,6 @@ impl TestFixture {
             consts::MINTER_RUNTIME_ARG_NAME => Key::from(ali.to_account_hash()).to_formatted_string(),
             "swap_fee" => U256::zero(),
             "dev" => Key::from(dev.to_account_hash()).to_formatted_string()
-
         };
 
         let session = SessionBuilder::new(session_code, session_args)
@@ -120,6 +119,14 @@ impl TestFixture {
         self.query_contract(consts::NAME_RUNTIME_ARG_NAME).unwrap()
     }
 
+    pub fn dev(&self) -> String {
+        self.query_contract("dev").unwrap()
+    }
+
+     pub fn swap_fee(&self) -> U256 {
+        self.query_contract("swap_fee").unwrap()
+    }
+
     pub fn token_symbol(&self) -> String {
         self.query_contract(consts::SYMBOL_RUNTIME_ARG_NAME)
             .unwrap()
@@ -150,12 +157,32 @@ impl TestFixture {
         self.query_contract(consts::TOTAL_SUPPLY_KEY_NAME).unwrap()
     }
 
-    pub fn change_minter(&mut self, newMinter: String, sender: Sender) {
+    pub fn change_minter(&mut self, new_minter: String, sender: Sender) {
         self.call(
             sender,
             consts::CHANGE_MINTER_ENTRY_POINT_NAME,
             runtime_args! {
-                consts::MINTER_RUNTIME_ARG_NAME => newMinter
+                consts::MINTER_RUNTIME_ARG_NAME => new_minter
+            },
+        );
+    }
+
+    pub fn change_dev(&mut self, new_dev: String, sender: Sender) {
+        self.call(
+            sender,
+            "change_dev",
+            runtime_args! {
+                "dev" => new_dev
+            },
+        );
+    }
+
+    pub fn change_swap_fee(&mut self, new_swap_fee: U256, sender: Sender) {
+        self.call(
+            sender,
+            "change_swap_fee",
+            runtime_args! {
+                "swap_fee" => new_swap_fee
             },
         );
     }

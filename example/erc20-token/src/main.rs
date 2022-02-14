@@ -43,6 +43,19 @@ pub extern "C" fn total_supply() {
     runtime::ret(CLValue::from_t(total_supply).unwrap_or_revert());
 }
 
+
+#[no_mangle]
+pub extern "C" fn dev() {
+    let dev = ERC20::default().dev();
+    runtime::ret(CLValue::from_t(dev).unwrap_or_revert());
+}
+
+#[no_mangle]
+pub extern "C" fn swap_fee() {
+    let swap_fee = ERC20::default().swap_fee();
+    runtime::ret(CLValue::from_t(swap_fee).unwrap_or_revert());
+}
+
 #[no_mangle]
 pub extern "C" fn balance_of() {
     let address: Address = runtime::get_named_arg(ADDRESS_RUNTIME_ARG_NAME);

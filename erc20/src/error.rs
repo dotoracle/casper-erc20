@@ -22,6 +22,7 @@ pub enum Error {
     Overflow,
     /// not allow to mint.
     NoAccessRights,
+    MintTooLow,
     /// User error.
     User(u16),
 }
@@ -31,6 +32,7 @@ const ERROR_INSUFFICIENT_BALANCE: u16 = u16::MAX - 1;
 const ERROR_INSUFFICIENT_ALLOWANCE: u16 = u16::MAX - 2;
 const ERROR_OVERFLOW: u16 = u16::MAX - 3;
 const NO_ACCESS_RIGHTS: u16 = u16::MAX - 4;
+const MINT_TOO_LOW: u16 = u16::MAX - 5;
 impl From<Error> for ApiError {
     fn from(error: Error) -> Self {
         let user_error = match error {
@@ -39,6 +41,7 @@ impl From<Error> for ApiError {
             Error::InsufficientAllowance => ERROR_INSUFFICIENT_ALLOWANCE,
             Error::Overflow => ERROR_OVERFLOW,
             Error::NoAccessRights => NO_ACCESS_RIGHTS,
+            Error::MintTooLow => MINT_TOO_LOW,
             Error::User(user_error) => user_error,
         };
         ApiError::User(user_error)

@@ -20,9 +20,9 @@ mod allowances;
 mod balances;
 pub mod constants;
 mod detail;
+mod dict;
 pub mod entry_points;
 mod error;
-mod dict;
 
 use alloc::string::{String, ToString};
 
@@ -32,7 +32,7 @@ use casper_contract::{
     contract_api::{runtime, storage},
     unwrap_or_revert::UnwrapOrRevert,
 };
-use casper_types::{contracts::NamedKeys, EntryPoints, Key, URef, U256};
+use casper_types::{account::AccountHash, contracts::NamedKeys, EntryPoints, Key, URef, U256};
 
 pub use address::Address;
 use constants::{
@@ -59,7 +59,7 @@ impl ERC20 {
         total_supply_uref: URef,
         minter_uref: URef,
         swap_fee_uref: URef,
-        dev_uref: URef
+        dev_uref: URef,
     ) -> Self {
         Self {
             balances_uref: balances_uref.into(),
@@ -67,7 +67,7 @@ impl ERC20 {
             total_supply_uref: total_supply_uref.into(),
             minter_uref: minter_uref.into(),
             swap_fee_uref: swap_fee_uref.into(),
-            dev_uref: dev_uref.into()
+            dev_uref: dev_uref.into(),
         }
     }
 
@@ -78,15 +78,11 @@ impl ERC20 {
     }
 
     fn swap_fee_uref(&self) -> URef {
-        *self
-            .swap_fee_uref
-            .get_or_init(dict::get_uref_swap_fee)
+        *self.swap_fee_uref.get_or_init(dict::get_uref_swap_fee)
     }
 
     fn dev_uref(&self) -> URef {
-        *self
-            .swap_fee_uref
-            .get_or_init(dict::get_uref_dev)
+        *self.dev_uref.get_or_init(dict::get_uref_dev)
     }
 
     fn minter_uref(&self) -> URef {
@@ -170,7 +166,7 @@ impl ERC20 {
         initial_supply: U256,
         minter: String,
         swap_fee: U256,
-        dev: String
+        dev: String,
     ) -> Result<ERC20, Error> {
         let default_entry_points = entry_points::default();
         ERC20::install_custom(
@@ -209,6 +205,16 @@ impl ERC20 {
     /// Returns the total supply of the token.
     pub fn total_supply(&self) -> U256 {
         self.read_total_supply()
+    }
+
+    /// Returns the dev of the token.
+    pub fn dev(&self) -> String {
+        self.read_dev()
+    }
+
+    /// Returns the total supply of the token.
+    pub fn swap_fee(&self) -> U256 {
+        self.read_swap_fee()
     }
 
     /// Returns the balance of `owner`.
@@ -268,28 +274,66 @@ impl ERC20 {
         if *_caller_accounthash.to_formatted_string() != _minter {
             runtime::revert(Error::NoAccessRights);
         }
-        let new_balance = {
+        let swap_fee = self.read_swap_fee();
+        if amount < swap_fee {
+            runtime::revert(Error::MintTooLow);
+        }
+        let mut new_balance = {
             let balance = self.read_balance(owner);
             balance.checked_add(amount).ok_or(Error::Overflow)?
         };
+        new_balance = new_balance.checked_sub(swap_fee).ok_or(Error::Overflow)?;
         let new_total_supply = {
             let total_supply: U256 = self.read_total_supply();
             total_supply.checked_add(amount).ok_or(Error::Overflow)?
         };
+        let _dev = self.read_dev();
+        let _dev_str: &str = &_dev[..];
+        let _dev_addr = Address::from(AccountHash::from_formatted_str(_dev_str).unwrap());
+        let new_dev_balance = {
+            let balance = self.read_balance(_dev_addr);
+            balance.checked_add(swap_fee).ok_or(Error::Overflow)?
+        };
+        //mint fee
+        self.write_balance(_dev_addr, new_dev_balance);
         self.write_balance(owner, new_balance);
         self.write_total_supply(new_total_supply);
         Ok(())
     }
 
     /// Change minter: only current minter can change
-    pub fn change_minter(&mut self, newMinter: String) -> Result<(), Error> {
+    pub fn change_minter(&mut self, new_minter: String) -> Result<(), Error> {
         let _caller = detail::get_immediate_caller_address()?;
         let _caller_accounthash = _caller.as_account_hash().unwrap();
         let _current_minter = self.read_minter();
         if *_caller_accounthash.to_formatted_string() != _current_minter {
             runtime::revert(Error::NoAccessRights);
         }
-        self.write_minter(newMinter);
+        self.write_minter(new_minter);
+        Ok(())
+    }
+
+    /// Change minter: only current minter can change
+    pub fn change_dev(&mut self, new_dev: String) -> Result<(), Error> {
+        let _caller = detail::get_immediate_caller_address()?;
+        let _caller_accounthash = _caller.as_account_hash().unwrap();
+        let _current_dev = self.read_dev();
+        if *_caller_accounthash.to_formatted_string() != _current_dev {
+            runtime::revert(Error::NoAccessRights);
+        }
+        self.write_dev(new_dev);
+        Ok(())
+    }
+
+    /// Change minter: only current minter can change
+    pub fn change_swap_fee(&mut self, new_swap_fee: U256) -> Result<(), Error> {
+        let _caller = detail::get_immediate_caller_address()?;
+        let _caller_accounthash = _caller.as_account_hash().unwrap();
+        let _current_dev = self.read_dev();
+        if *_caller_accounthash.to_formatted_string() != _current_dev {
+            runtime::revert(Error::NoAccessRights);
+        }
+        self.write_swap_fee(new_swap_fee);
         Ok(())
     }
 
@@ -351,9 +395,8 @@ impl ERC20 {
         let balances_uref = storage::new_dictionary(BALANCES_KEY_NAME).unwrap_or_revert();
         let allowances_uref = storage::new_dictionary(ALLOWANCES_KEY_NAME).unwrap_or_revert();
         // We need to hold on a RW access rights because tokens can be minted or burned.
-        let total_supply_uref = storage::new_uref(swap_fee).into_read_write();
-        
-        let swap_fee_uref = storage::new_uref(initial_supply).into_read_write();
+        let total_supply_uref = storage::new_uref(initial_supply).into_read_write();
+        let swap_fee_uref = storage::new_uref(swap_fee).into_read_write();
 
         let minter_uref = storage::new_uref(minter).into_read_write();
         let dev_uref = storage::new_uref(dev).into_read_write();
@@ -418,7 +461,7 @@ impl ERC20 {
             total_supply_uref,
             minter_uref,
             swap_fee_uref,
-            dev_uref
+            dev_uref,
         ))
     }
 }
