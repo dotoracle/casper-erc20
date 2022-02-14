@@ -13,7 +13,7 @@ use crate::{
         DECIMALS_ENTRY_POINT_NAME, MINT_ENTRY_POINT_NAME, NAME_ENTRY_POINT_NAME,
         OWNER_RUNTIME_ARG_NAME, RECIPIENT_RUNTIME_ARG_NAME, SPENDER_RUNTIME_ARG_NAME,
         SYMBOL_ENTRY_POINT_NAME, TOTAL_SUPPLY_ENTRY_POINT_NAME, TRANSFER_ENTRY_POINT_NAME,
-        TRANSFER_FROM_ENTRY_POINT_NAME,
+        TRANSFER_FROM_ENTRY_POINT_NAME, MINTER_ENTRY_POINT_NAME
     },
 };
 
@@ -38,6 +38,18 @@ pub fn symbol() -> EntryPoint {
         EntryPointType::Contract,
     )
 }
+
+/// Returns the `minter` entry point.
+pub fn minter() -> EntryPoint {
+    EntryPoint::new(
+        String::from(MINTER_ENTRY_POINT_NAME),
+        Vec::new(),
+        String::cl_type(),
+        EntryPointAccess::Public,
+        EntryPointType::Contract,
+    )
+}
+
 /// Returns the `transfer_from` entry point.
 pub fn transfer_from() -> EntryPoint {
     EntryPoint::new(
@@ -112,11 +124,9 @@ pub fn mint() -> EntryPoint {
 /// Returns the `burn` entry point.
 pub fn burn() -> EntryPoint {
     EntryPoint::new(
-        BURN_ENTRY_POINT_NAME,
+        String::from(BURN_ENTRY_POINT_NAME),
         vec![Parameter::new(AMOUNT_RUNTIME_ARG_NAME, U256::cl_type())],
         CLType::Unit,
-        // NOTE: For security reasons never use this entrypoint definition in a production
-        // contract. This is marks the entry point as public.
         EntryPointAccess::Public,
         EntryPointType::Contract,
     )
@@ -167,6 +177,6 @@ pub fn default() -> EntryPoints {
     entry_points.add_entry_point(allowance());
     entry_points.add_entry_point(transfer_from());
     entry_points.add_entry_point(mint());
-    //entry_points.add_entry_point(burn());
+    entry_points.add_entry_point(burn());
     entry_points
 }

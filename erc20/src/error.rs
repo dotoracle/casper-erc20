@@ -20,6 +20,7 @@ pub enum Error {
     InsufficientAllowance,
     /// Operation would cause an integer overflow.
     Overflow,
+    /// not allow to mint.
     NoAccessRights,
     /// User error.
     User(u16),

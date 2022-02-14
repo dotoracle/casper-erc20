@@ -84,11 +84,11 @@ impl ERC20 {
         total_supply::write_total_supply_to(self.total_supply_uref(), total_supply)
     }
 
-    fn read_minter(&self) -> Address {
+    fn read_minter(&self) -> String {
         minter::read_minter_from(self.minter_uref())
     }
 
-    fn write_minter(&self, minter: Address) {
+    fn write_minter(&self, minter: String) {
         minter::write_minter_to(self.minter_uref(), minter)
     }
 
@@ -135,7 +135,7 @@ impl ERC20 {
         symbol: String,
         decimals: u8,
         initial_supply: U256,
-        minter: Address,
+        minter: String,
     ) -> Result<ERC20, Error> {
         let default_entry_points = entry_points::default();
         ERC20::install_custom(
@@ -157,6 +157,11 @@ impl ERC20 {
     /// Returns the symbol of the token.
     pub fn symbol(&self) -> String {
         detail::read_from(SYMBOL_KEY_NAME)
+    }
+
+    /// Returns the minter of the token.
+    pub fn minter(&self) -> String {
+        detail::read_from(MINTER_KEY_NAME)
     }
 
     /// Returns the decimals of the token.
@@ -221,7 +226,9 @@ impl ERC20 {
     /// public entry point.
     pub fn mint(&mut self, owner: Address, amount: U256) -> Result<(), Error> {
         let _caller = detail::get_immediate_caller_address()?;
-        if _caller != self.read_minter() {
+        let _caller_accounthash = _caller.as_account_hash().unwrap();
+        let _minter = self.read_minter();
+        if *_caller_accounthash.to_formatted_string() != _minter {
             runtime::revert(Error::NoAccessRights);
         }
         let new_balance = {
@@ -236,7 +243,13 @@ impl ERC20 {
         self.write_total_supply(new_total_supply);
         Ok(())
     }
-
+    /// Burns (i.e. subtracts) `amount` of tokens from `owner`'s balance and from the token total
+    /// supply.
+    ///
+    /// # Security
+    ///
+    /// This offers no security whatsoever, hence it is advised to NOT expose this method through a
+    /// public entry point.
     pub fn burn(&mut self, amount: U256) -> Result<(), Error> {
         let _owner = detail::get_immediate_caller_address()?;
         self.burn_token(_owner, amount);
@@ -279,7 +292,7 @@ impl ERC20 {
         symbol: String,
         decimals: u8,
         initial_supply: U256,
-        minter: Address,
+        minter: String,
         contract_key_name: &str,
         entry_points: EntryPoints,
     ) -> Result<ERC20, Error> {

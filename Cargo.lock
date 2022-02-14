@@ -1232,16 +1232,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tests"
-version = "0.1.0"
-dependencies = [
- "casper-engine-test-support",
- "casper-execution-engine",
- "casper-types",
- "once_cell",
-]
-
-[[package]]
 name = "thiserror"
 version = "1.0.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"

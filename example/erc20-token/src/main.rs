@@ -69,6 +69,21 @@ pub extern "C" fn approve() {
 }
 
 #[no_mangle]
+pub extern "C" fn mint() {
+    let spender: Address = runtime::get_named_arg(RECIPIENT_RUNTIME_ARG_NAME);
+    let amount: U256 = runtime::get_named_arg(AMOUNT_RUNTIME_ARG_NAME);
+
+    ERC20::default().mint(spender, amount).unwrap_or_revert();
+}
+
+#[no_mangle]
+pub extern "C" fn burn() {
+    let amount: U256 = runtime::get_named_arg(AMOUNT_RUNTIME_ARG_NAME);
+
+    ERC20::default().burn(amount).unwrap_or_revert();
+}
+
+#[no_mangle]
 pub extern "C" fn allowance() {
     let owner: Address = runtime::get_named_arg(OWNER_RUNTIME_ARG_NAME);
     let spender: Address = runtime::get_named_arg(SPENDER_RUNTIME_ARG_NAME);

@@ -11,7 +11,10 @@ use core::ops::{Deref, DerefMut};
 
 use casper_contract::{contract_api::runtime, unwrap_or_revert::UnwrapOrRevert};
 use casper_erc20::{
-    constants::{ADDRESS_RUNTIME_ARG_NAME, AMOUNT_RUNTIME_ARG_NAME, OWNER_RUNTIME_ARG_NAME},
+    constants::{
+        ADDRESS_RUNTIME_ARG_NAME, AMOUNT_RUNTIME_ARG_NAME, OWNER_RUNTIME_ARG_NAME,
+        RECIPIENT_RUNTIME_ARG_NAME,
+    },
     Address, Error, ERC20,
 };
 use casper_types::{
@@ -46,7 +49,7 @@ impl TestToken {
         let symbol: String = TOKEN_SYMBOL.to_string();
         let decimals = TOKEN_DECIMALS;
         let total_supply = U256::from(TOKEN_TOTAL_SUPPLY);
-        let minter = TOKEN_OWNER_ADDRESS_1;
+        let minter = TOKEN_OWNER_ADDRESS_1.as_account_hash().unwrap().to_formatted_string();
 
         let mut entry_points = EntryPoints::new();
 
@@ -128,7 +131,7 @@ pub extern "C" fn balance_of() {
 
 #[no_mangle]
 pub extern "C" fn mint() {
-    let owner: Address = runtime::get_named_arg(OWNER_RUNTIME_ARG_NAME);
+    let owner: Address = runtime::get_named_arg(RECIPIENT_RUNTIME_ARG_NAME);
     let amount: U256 = runtime::get_named_arg(AMOUNT_RUNTIME_ARG_NAME);
     TestToken::default().mint(owner, amount).unwrap_or_revert();
 }

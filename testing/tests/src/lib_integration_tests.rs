@@ -23,11 +23,13 @@ const DECIMALS_KEY: &str = "decimals";
 const TOTAL_SUPPLY_KEY: &str = "total_supply";
 const BALANCES_KEY: &str = "balances";
 const ALLOWANCES_KEY: &str = "allowances";
+const MINTER_KEY: &str = "minter";
 
 const ARG_NAME: &str = "name";
 const ARG_SYMBOL: &str = "symbol";
 const ARG_DECIMALS: &str = "decimals";
 const ARG_TOTAL_SUPPLY: &str = "total_supply";
+const ARG_MINTER: &str = "minter";
 
 const TEST_CONTRACT_KEY: &str = "test_contract";
 
@@ -136,27 +138,28 @@ fn setup() -> (InMemoryWasmTestBuilder, TestContext) {
             ARG_SYMBOL => TOKEN_SYMBOL,
             ARG_DECIMALS => TOKEN_DECIMALS,
             ARG_TOTAL_SUPPLY => U256::from(TOKEN_TOTAL_SUPPLY),
+            ARG_MINTER => *ACCOUNT_1_ADDR
         },
     )
     .build();
-    let install_request_2 = ExecuteRequestBuilder::standard(
-        *DEFAULT_ACCOUNT_ADDR,
-        CONTRACT_ERC20_TEST,
-        RuntimeArgs::default(),
-    )
-    .build();
-    let install_request_3 = ExecuteRequestBuilder::standard(
-        *DEFAULT_ACCOUNT_ADDR,
-        CONTRACT_ERC20_TEST_CALL,
-        RuntimeArgs::default(),
-    )
-    .build();
+    // let install_request_2 = ExecuteRequestBuilder::standard(
+    //     *DEFAULT_ACCOUNT_ADDR,
+    //     CONTRACT_ERC20_TEST,
+    //     RuntimeArgs::default(),
+    // )
+    // .build();
+    // let install_request_3 = ExecuteRequestBuilder::standard(
+    //     *DEFAULT_ACCOUNT_ADDR,
+    //     CONTRACT_ERC20_TEST_CALL,
+    //     RuntimeArgs::default(),
+    // )
+    // .build();
 
     builder.exec(transfer_request_1).expect_success().commit();
     builder.exec(transfer_request_2).expect_success().commit();
     builder.exec(install_request_1).expect_success().commit();
-    builder.exec(install_request_2).expect_success().commit();
-    builder.exec(install_request_3).expect_success().commit();
+    // builder.exec(install_request_2).expect_success().commit();
+    // builder.exec(install_request_3).expect_success().commit();
 
     let account = builder
         .get_account(*DEFAULT_ACCOUNT_ADDR)

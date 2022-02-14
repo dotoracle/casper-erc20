@@ -94,6 +94,23 @@ mod tests {
             fixture.balance_of(Key::from(fixture.ali)),
             Some(initial_ali_balance)
         );
+
+        //burn
+        fixture.burn(initial_ali_balance, Sender(fixture.ali));
+        assert_eq!(
+            fixture.balance_of(Key::from(fixture.ali)),
+            Some(U256::zero())
+        );
+
+        let _minter = fixture.get_minter();
+        println!("Minter");
+
+        // //mint
+        fixture.mint(Key::from(fixture.bob), U256::from(20), Sender(fixture.bob));
+        assert_eq!(
+            fixture.balance_of(Key::from(fixture.bob)),
+            Some(U256::from(20))
+        );
     }
 
     #[should_panic(expected = "ApiError::User(65534) [131070]")]

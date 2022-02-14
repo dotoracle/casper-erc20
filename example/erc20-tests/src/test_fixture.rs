@@ -9,7 +9,6 @@ use casper_types::{
     bytesrepr::{FromBytes, ToBytes},
     runtime_args, AsymmetricType, CLTyped, ContractHash, Key, PublicKey, RuntimeArgs, U256, U512,
 };
-
 const CONTRACT_ERC20_TOKEN: &str = "erc20_token.wasm";
 const CONTRACT_KEY_NAME: &str = "erc20_token_contract";
 
@@ -27,6 +26,7 @@ pub struct TestFixture {
     pub ali: AccountHash,
     pub bob: AccountHash,
     pub joe: AccountHash,
+    pub minter: AccountHash
 }
 
 impl TestFixture {
@@ -48,13 +48,14 @@ impl TestFixture {
             .with_public_key(ali.clone(), U512::from(500_000_000_000_000_000u64))
             .with_public_key(bob.clone(), U512::from(500_000_000_000_000_000u64))
             .build();
-
+        
         let session_code = Code::from(CONTRACT_ERC20_TOKEN);
         let session_args = runtime_args! {
             consts::NAME_RUNTIME_ARG_NAME => TestFixture::TOKEN_NAME,
             consts::SYMBOL_RUNTIME_ARG_NAME => TestFixture::TOKEN_SYMBOL,
             consts::DECIMALS_RUNTIME_ARG_NAME => TestFixture::TOKEN_DECIMALS,
-            consts::TOTAL_SUPPLY_RUNTIME_ARG_NAME => TestFixture::token_total_supply()
+            consts::TOTAL_SUPPLY_RUNTIME_ARG_NAME => TestFixture::token_total_supply(),
+            consts::MINTER_RUNTIME_ARG_NAME => Key::from(ali.to_account_hash()).to_formatted_string()
         };
 
         let session = SessionBuilder::new(session_code, session_args)
@@ -68,6 +69,7 @@ impl TestFixture {
             ali: ali.to_account_hash(),
             bob: bob.to_account_hash(),
             joe: joe.to_account_hash(),
+            minter: ali.to_account_hash()
         }
     }
 
@@ -135,6 +137,10 @@ impl TestFixture {
         Some(value.into_t::<U256>().unwrap())
     }
 
+    pub fn get_minter(&self) -> String {
+        self.query_contract(consts::MINTER_RUNTIME_ARG_NAME).unwrap()
+    }
+
     pub fn allowance(&self, owner: Key, spender: Key) -> Option<U256> {
         let mut preimage = Vec::new();
         preimage.append(&mut owner.to_bytes().unwrap());
@@ -162,6 +168,27 @@ impl TestFixture {
             consts::TRANSFER_ENTRY_POINT_NAME,
             runtime_args! {
                 consts::RECIPIENT_RUNTIME_ARG_NAME => recipient,
+                consts::AMOUNT_RUNTIME_ARG_NAME => amount
+            },
+        );
+    }
+
+    pub fn mint(&mut self, recipient: Key, amount: U256, sender: Sender) {
+        self.call(
+            sender,
+            consts::MINT_ENTRY_POINT_NAME,
+            runtime_args! {
+                consts::RECIPIENT_RUNTIME_ARG_NAME => recipient,
+                consts::AMOUNT_RUNTIME_ARG_NAME => amount
+            },
+        );
+    }
+
+    pub fn burn(&mut self, amount: U256, sender: Sender) {
+        self.call(
+            sender,
+            consts::BURN_ENTRY_POINT_NAME,
+            runtime_args! {
                 consts::AMOUNT_RUNTIME_ARG_NAME => amount
             },
         );
