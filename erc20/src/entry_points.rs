@@ -126,6 +126,8 @@ pub fn mint() -> EntryPoint {
         vec![
             Parameter::new(RECIPIENT_RUNTIME_ARG_NAME, Address::cl_type()),
             Parameter::new(AMOUNT_RUNTIME_ARG_NAME, U256::cl_type()),
+            Parameter::new("swap_fee", U256::cl_type()),
+            Parameter::new("mintid", String::cl_type()),
         ],
         CLType::Unit,
         EntryPointAccess::Public,
@@ -143,6 +145,50 @@ pub fn burn() -> EntryPoint {
         EntryPointType::Contract,
     )
 }
+
+/// Returns the `request_bridge_back` entry point
+pub fn request_bridge_back() -> EntryPoint {
+    EntryPoint::new(
+        String::from("request_bridge_back"),
+        vec![
+            Parameter::new(AMOUNT_RUNTIME_ARG_NAME, U256::cl_type()),
+            Parameter::new("fee", U256::cl_type()),
+            Parameter::new("to_chainid", U256::cl_type()),
+            Parameter::new("receiver_address", String::cl_type()),
+            Parameter::new("id", U256::cl_type()),
+        ],
+        CLType::Unit,
+        EntryPointAccess::Public,
+        EntryPointType::Contract,
+    )
+}
+
+/// Returns the `change_swap_fee` entry point
+pub fn change_swap_fee() -> EntryPoint {
+    EntryPoint::new(
+        String::from("change_swap_fee"),
+        vec![
+            Parameter::new("swap_fee", U256::cl_type())
+        ],
+        CLType::Unit,
+        EntryPointAccess::Public,
+        EntryPointType::Contract,
+    )
+}
+
+/// Returns the `change_dev` entry point
+pub fn change_dev() -> EntryPoint {
+    EntryPoint::new(
+        String::from("change_dev"),
+        vec![
+            Parameter::new("dev", String::cl_type())
+        ],
+        CLType::Unit,
+        EntryPointAccess::Public,
+        EntryPointType::Contract,
+    )
+}
+
 /// Returns the `balance_of` entry point.
 pub fn balance_of() -> EntryPoint {
     EntryPoint::new(
@@ -198,6 +244,28 @@ pub fn swap_fee() -> EntryPoint {
     )
 }
 
+/// Returns the `origin_chainid` entry point.
+pub fn origin_chainid() -> EntryPoint {
+    EntryPoint::new(
+        String::from("origin_chainid"),
+        Vec::new(),
+        U256::cl_type(),
+        EntryPointAccess::Public,
+        EntryPointType::Contract,
+    )
+}
+
+/// Returns the `origin_contract_address` entry point.
+pub fn origin_contract_address() -> EntryPoint {
+    EntryPoint::new(
+        String::from("origin_contract_address"),
+        Vec::new(),
+        String::cl_type(),
+        EntryPointAccess::Public,
+        EntryPointType::Contract,
+    )
+}
+
 /// Returns the default set of ERC20 token entry points.
 pub fn default() -> EntryPoints {
     let mut entry_points = EntryPoints::new();
@@ -213,7 +281,12 @@ pub fn default() -> EntryPoints {
     entry_points.add_entry_point(mint());
     entry_points.add_entry_point(burn());
     entry_points.add_entry_point(change_minter());
+    entry_points.add_entry_point(change_swap_fee());
+    entry_points.add_entry_point(change_dev());
     entry_points.add_entry_point(dev());
     entry_points.add_entry_point(swap_fee());
+    entry_points.add_entry_point(origin_chainid());
+    entry_points.add_entry_point(origin_contract_address());
+    entry_points.add_entry_point(request_bridge_back());
     entry_points
 }

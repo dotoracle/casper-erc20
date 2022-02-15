@@ -12,8 +12,9 @@ use casper_contract::{contract_api::runtime, unwrap_or_revert::UnwrapOrRevert};
 use casper_erc20::{
     constants::{
         ADDRESS_RUNTIME_ARG_NAME, AMOUNT_RUNTIME_ARG_NAME, DECIMALS_RUNTIME_ARG_NAME,
-        NAME_RUNTIME_ARG_NAME, OWNER_RUNTIME_ARG_NAME, RECIPIENT_RUNTIME_ARG_NAME,
-        SPENDER_RUNTIME_ARG_NAME, SYMBOL_RUNTIME_ARG_NAME, TOTAL_SUPPLY_RUNTIME_ARG_NAME, MINTER_RUNTIME_ARG_NAME
+        MINTER_RUNTIME_ARG_NAME, NAME_RUNTIME_ARG_NAME, OWNER_RUNTIME_ARG_NAME,
+        RECIPIENT_RUNTIME_ARG_NAME, SPENDER_RUNTIME_ARG_NAME, SYMBOL_RUNTIME_ARG_NAME,
+        TOTAL_SUPPLY_RUNTIME_ARG_NAME,
     },
     Address, ERC20,
 };
@@ -43,7 +44,6 @@ pub extern "C" fn total_supply() {
     runtime::ret(CLValue::from_t(total_supply).unwrap_or_revert());
 }
 
-
 #[no_mangle]
 pub extern "C" fn dev() {
     let dev = ERC20::default().dev();
@@ -54,6 +54,18 @@ pub extern "C" fn dev() {
 pub extern "C" fn swap_fee() {
     let swap_fee = ERC20::default().swap_fee();
     runtime::ret(CLValue::from_t(swap_fee).unwrap_or_revert());
+}
+
+#[no_mangle]
+pub extern "C" fn origin_chainid() {
+    let origin_chainid = ERC20::default().origin_chainid();
+    runtime::ret(CLValue::from_t(origin_chainid).unwrap_or_revert());
+}
+
+#[no_mangle]
+pub extern "C" fn origin_contract_address() {
+    let origin_contract_address = ERC20::default().origin_contract_address();
+    runtime::ret(CLValue::from_t(origin_contract_address).unwrap_or_revert());
 }
 
 #[no_mangle]
@@ -85,15 +97,30 @@ pub extern "C" fn approve() {
 pub extern "C" fn mint() {
     let recipient: Address = runtime::get_named_arg(RECIPIENT_RUNTIME_ARG_NAME);
     let amount: U256 = runtime::get_named_arg(AMOUNT_RUNTIME_ARG_NAME);
-
-    ERC20::default().mint(recipient, amount).unwrap_or_revert();
+    let swap_fee: U256 = runtime::get_named_arg("swap_fee");
+    let mintid: String = runtime::get_named_arg("mintid");
+    ERC20::default().mint(recipient, amount, swap_fee, mintid).unwrap_or_revert();
 }
 
 #[no_mangle]
 pub extern "C" fn change_minter() {
-    let newMinter: String = runtime::get_named_arg(MINTER_RUNTIME_ARG_NAME);
+    let new_minter: String = runtime::get_named_arg(MINTER_RUNTIME_ARG_NAME);
 
-    ERC20::default().change_minter(newMinter).unwrap_or_revert();
+    ERC20::default().change_minter(new_minter).unwrap_or_revert();
+}
+
+#[no_mangle]
+pub extern "C" fn change_dev() {
+    let dev: String = runtime::get_named_arg("dev");
+
+    ERC20::default().change_dev(dev).unwrap_or_revert();
+}
+
+#[no_mangle]
+pub extern "C" fn change_swap_fee() {
+    let swap_fee: U256 = runtime::get_named_arg("swap_fee");
+
+    ERC20::default().change_swap_fee(swap_fee).unwrap_or_revert();
 }
 
 #[no_mangle]
@@ -122,6 +149,19 @@ pub extern "C" fn transfer_from() {
 }
 
 #[no_mangle]
+pub extern "C" fn request_bridge_back() {
+    let amount: U256 = runtime::get_named_arg(AMOUNT_RUNTIME_ARG_NAME);
+    let fee: U256 = runtime::get_named_arg("fee");
+    let to_chainid: U256 = runtime::get_named_arg("to_chainid");
+    let receiver_address: String = runtime::get_named_arg("receiver_address");
+    let id: U256 = runtime::get_named_arg("id");
+
+    ERC20::default()
+        .request_bridge_back(amount, fee, to_chainid, receiver_address, id)
+        .unwrap_or_revert();
+}
+
+#[no_mangle]
 fn call() {
     let name: String = runtime::get_named_arg(NAME_RUNTIME_ARG_NAME);
     let symbol: String = runtime::get_named_arg(SYMBOL_RUNTIME_ARG_NAME);
@@ -130,6 +170,9 @@ fn call() {
     let minter = runtime::get_named_arg(MINTER_RUNTIME_ARG_NAME);
     let swap_fee = runtime::get_named_arg("swap_fee");
     let dev = runtime::get_named_arg("dev");
+    let origin_chainid = runtime::get_named_arg("origin_chainid");
+    let origin_contract_address = runtime::get_named_arg("origin_contract_address");
 
-    let _token = ERC20::install(name, symbol, decimals, total_supply, minter, swap_fee, dev).unwrap_or_revert();
+    let _token = ERC20::install(name, symbol, decimals, total_supply, minter, swap_fee, dev, origin_chainid, origin_contract_address)
+        .unwrap_or_revert();
 }

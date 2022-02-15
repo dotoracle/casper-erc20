@@ -22,7 +22,16 @@ pub enum Error {
     Overflow,
     /// not allow to mint.
     NoAccessRights,
+    /// MintTooLow.
     MintTooLow,
+    /// AlreadyMint.
+    AlreadyMint,
+    /// InvalidFee.
+    InvalidFee,
+    /// request id exist.
+    RequestIdExist,
+    /// request amount too low.
+    RequestAmountTooLow,
     /// User error.
     User(u16),
 }
@@ -33,6 +42,11 @@ const ERROR_INSUFFICIENT_ALLOWANCE: u16 = u16::MAX - 2;
 const ERROR_OVERFLOW: u16 = u16::MAX - 3;
 const NO_ACCESS_RIGHTS: u16 = u16::MAX - 4;
 const MINT_TOO_LOW: u16 = u16::MAX - 5;
+const ALREADY_MINT: u16 = u16::MAX - 6;
+const INVALID_FEE: u16 = u16::MAX - 7;
+const REQUEST_ID_EXIST: u16 = u16::MAX - 8;
+const REQUEST_AMOUNT_TOO_LOW: u16 = u16::MAX - 9;
+
 impl From<Error> for ApiError {
     fn from(error: Error) -> Self {
         let user_error = match error {
@@ -42,6 +56,10 @@ impl From<Error> for ApiError {
             Error::Overflow => ERROR_OVERFLOW,
             Error::NoAccessRights => NO_ACCESS_RIGHTS,
             Error::MintTooLow => MINT_TOO_LOW,
+            Error::AlreadyMint => ALREADY_MINT,
+            Error::InvalidFee => INVALID_FEE,
+            Error::RequestIdExist => REQUEST_ID_EXIST,
+            Error::RequestAmountTooLow => REQUEST_AMOUNT_TOO_LOW,
             Error::User(user_error) => user_error,
         };
         ApiError::User(user_error)

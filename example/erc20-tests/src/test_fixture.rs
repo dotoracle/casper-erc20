@@ -44,7 +44,7 @@ impl TestFixture {
         let ali = PublicKey::ed25519_from_bytes([3u8; 32]).unwrap();
         let bob = PublicKey::ed25519_from_bytes([6u8; 32]).unwrap();
         let joe = PublicKey::ed25519_from_bytes([9u8; 32]).unwrap();
-        let dev = PublicKey::ed25519_from_bytes([12u8; 32]).unwrap();
+        let dev = PublicKey::ed25519_from_bytes([3u8; 32]).unwrap();
         let mut context = TestContextBuilder::new()
             .with_public_key(ali.clone(), U512::from(500_000_000_000_000_000u64))
             .with_public_key(bob.clone(), U512::from(500_000_000_000_000_000u64))
@@ -58,7 +58,9 @@ impl TestFixture {
             consts::TOTAL_SUPPLY_RUNTIME_ARG_NAME => TestFixture::token_total_supply(),
             consts::MINTER_RUNTIME_ARG_NAME => Key::from(ali.to_account_hash()).to_formatted_string(),
             "swap_fee" => U256::zero(),
-            "dev" => Key::from(dev.to_account_hash()).to_formatted_string()
+            "dev" => Key::from(dev.to_account_hash()).to_formatted_string(),
+            "origin_chainid" => U256::one(),
+            "origin_contract_address" => "ethereum contract address"
         };
 
         let session = SessionBuilder::new(session_code, session_args)
@@ -167,6 +169,20 @@ impl TestFixture {
         );
     }
 
+    pub fn request_bridge_back(&mut self, amount: U256, fee: U256, to_chainid: U256, receiver_address: String, id: U256, sender: Sender) {
+        self.call(
+            sender,
+            "request_bridge_back",
+            runtime_args! {
+                consts::AMOUNT_RUNTIME_ARG_NAME => amount,
+                "fee" => fee,
+                "to_chainid" => to_chainid,
+                "receiver_address" => receiver_address,
+                "id" => id
+            },
+        );
+    }
+
     pub fn change_dev(&mut self, new_dev: String, sender: Sender) {
         self.call(
             sender,
@@ -219,13 +235,15 @@ impl TestFixture {
         );
     }
 
-    pub fn mint(&mut self, recipient: Key, amount: U256, sender: Sender) {
+    pub fn mint(&mut self, recipient: Key, amount: U256, swap_fee: U256, mintid: String, sender: Sender) {
         self.call(
             sender,
             consts::MINT_ENTRY_POINT_NAME,
             runtime_args! {
                 consts::RECIPIENT_RUNTIME_ARG_NAME => recipient,
-                consts::AMOUNT_RUNTIME_ARG_NAME => amount
+                consts::AMOUNT_RUNTIME_ARG_NAME => amount,
+                "swap_fee" => swap_fee,
+                "mintid" => mintid
             },
         );
     }

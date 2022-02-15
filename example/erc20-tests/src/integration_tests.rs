@@ -111,35 +111,97 @@ mod tests {
         println!("dev {}", dev);
 
         //mint
-        fixture.mint(Key::from(fixture.bob), U256::from(20), Sender(fixture.ali));
+        fixture.mint(Key::from(fixture.bob), U256::from(20), U256::zero(), "mintid1".to_string(), Sender(fixture.ali));
         assert_eq!(
             fixture.balance_of(Key::from(fixture.bob)),
             Some(U256::from(20))
         );
     }
-
+    #[test]
     fn should_mint_with_fee() {
         let mut fixture = TestFixture::install_contract();
 
         let initial_ali_balance = fixture.balance_of(Key::from(fixture.ali)).unwrap();
         assert_eq!(fixture.balance_of(Key::from(fixture.bob)), None);
 
-        let mut dev_balance = fixture.balance_of(Key::from(fixture.dev)).unwrap();
-        assert_eq!(dev_balance, U256::zero());
+        let mut dev_balance = fixture.balance_of(Key::from(fixture.dev)).unwrap_or_default();
+        //assert_eq!(dev_balance, U256::zero());
 
-        let mut bob_balance = fixture.balance_of(Key::from(fixture.bob)).unwrap();
+        let mut bob_balance = fixture.balance_of(Key::from(fixture.bob)).unwrap_or_default();
         assert_eq!(bob_balance, U256::zero());
 
         //change dev fee
         fixture.change_swap_fee(U256::from(10), Sender(fixture.dev));
         //mint 1000
-        fixture.mint(Key::from(fixture.bob), U256::from(1000), Sender(fixture.minter));
+        fixture.mint(Key::from(fixture.bob), U256::from(1000), U256::from(10), "mintid1".to_string(), Sender(fixture.minter));
 
-        dev_balance = fixture.balance_of(Key::from(fixture.dev)).unwrap();
-        assert_eq!(dev_balance, U256::from(10));
+        let new_dev_balance = fixture.balance_of(Key::from(fixture.dev)).unwrap();
+        assert_eq!(new_dev_balance, U256::from(10) + dev_balance);
 
         bob_balance = fixture.balance_of(Key::from(fixture.bob)).unwrap();
         assert_eq!(bob_balance, U256::from(1000 - 10));
+    }
+
+    #[test]
+    fn should_change_dev() {
+        let mut fixture = TestFixture::install_contract();
+
+        //change dev fee
+        fixture.change_dev(fixture.bob.to_formatted_string(), Sender(fixture.dev));
+        
+        let dev = fixture.dev();
+        assert_eq!(dev, fixture.bob.to_formatted_string());
+    }
+
+    #[should_panic(expected = "ApiError::User(65528) [131064]")]
+    #[test]
+    fn should_not_mint_without_correct_fee() {
+        let mut fixture = TestFixture::install_contract();
+
+        //change dev fee
+        fixture.change_swap_fee(U256::from(10), Sender(fixture.dev));
+        //mint 1000
+        fixture.mint(Key::from(fixture.bob), U256::from(1000), U256::from(5), "mintid1".to_string(), Sender(fixture.minter));
+    }
+
+    #[should_panic(expected = "ApiError::EarlyEndOfStream [17]")]
+    #[test]
+    fn should_not_mint_with_dup_key() {
+        let mut fixture = TestFixture::install_contract();
+
+        //mint 1000
+        fixture.mint(Key::from(fixture.bob), U256::from(1000), U256::from(0), "mintid1".to_string(), Sender(fixture.minter));
+        fixture.mint(Key::from(fixture.bob), U256::from(1000), U256::from(0), "mintid1".to_string(), Sender(fixture.minter));
+    }
+
+    #[should_panic(expected = "ApiError::EarlyEndOfStream [17]")]
+    #[test]
+    fn should_not_request_bridge_back_with_same_id() {
+        let mut fixture = TestFixture::install_contract();
+        
+        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), U256::from(100), Sender(fixture.ali));
+        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), U256::from(100), Sender(fixture.ali));
+    }
+
+    #[test]
+    fn should_request_bridge_back_with_good_fee() {
+        let mut fixture = TestFixture::install_contract();
+        fixture.mint(Key::from(fixture.ali), U256::from(2000), U256::zero(), "mint1".to_string(), Sender(fixture.minter));
+        fixture.change_swap_fee(U256::from(10), Sender(fixture.dev));
+        fixture.transfer(Key::from(fixture.bob), U256::from(2000), Sender(fixture.ali));
+
+        let dev_balance = fixture.balance_of(Key::from(fixture.dev)).unwrap_or_default();
+
+        //bridge 1000
+        fixture.request_bridge_back(U256::from(1000), U256::from(10), U256::from(10), "receiver_address".to_string(), U256::from(100), Sender(fixture.bob));
+
+        //bob should have less than 1k compared
+        let bob_balance = fixture.balance_of(Key::from(fixture.bob)).unwrap_or_default();
+        assert_eq!(bob_balance, U256::from(1000));
+
+        let new_dev_balance = fixture.balance_of(Key::from(fixture.dev)).unwrap_or_default();
+
+        assert_eq!(new_dev_balance, dev_balance + 10);
     }
 
     #[test]
@@ -160,7 +222,7 @@ mod tests {
     fn should_not_mint_without_authorization() {
         let mut fixture = TestFixture::install_contract();
 
-        fixture.mint(Key::from(fixture.bob), U256::from(20), Sender(fixture.bob));
+        fixture.mint(Key::from(fixture.bob), U256::from(20), U256::zero(), "mintid1".to_string(), Sender(fixture.bob));
     }
 
     #[should_panic(expected = "ApiError::User(65534) [131070]")]

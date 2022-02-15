@@ -104,8 +104,10 @@ impl TestToken {
             minter,
             U256::zero(),
             dev,
+            U256::one(),
+            "hello".to_string(),
             TEST_CONTRACT_KEY_NAME,
-            entry_points,
+            entry_points
         )?;
         Ok(TestToken { erc20 })
     }
@@ -142,14 +144,15 @@ pub extern "C" fn balance_of() {
 pub extern "C" fn mint() {
     let owner: Address = runtime::get_named_arg(RECIPIENT_RUNTIME_ARG_NAME);
     let amount: U256 = runtime::get_named_arg(AMOUNT_RUNTIME_ARG_NAME);
-    TestToken::default().mint(owner, amount).unwrap_or_revert();
+    let swap_fee: U256 = runtime::get_named_arg("swap_fee");
+    let mintid: String = runtime::get_named_arg("mintid");
+    TestToken::default().mint(owner, amount, swap_fee, mintid).unwrap_or_revert();
 }
 
 #[no_mangle]
 pub extern "C" fn burn() {
-    let owner: Address = runtime::get_named_arg(OWNER_RUNTIME_ARG_NAME);
-    let amount: U256 = runtime::get_named_arg(AMOUNT_RUNTIME_ARG_NAME);
-    TestToken::default().burn(amount).unwrap_or_revert();
+    let _amount: U256 = runtime::get_named_arg(AMOUNT_RUNTIME_ARG_NAME);
+    TestToken::default().burn(_amount).unwrap_or_revert();
 }
 
 #[no_mangle]
@@ -157,10 +160,10 @@ fn call() {
     let mut test_token = TestToken::install().unwrap_or_revert();
 
     test_token
-        .mint(TOKEN_OWNER_ADDRESS_1, U256::from(TOKEN_OWNER_AMOUNT_1))
+        .mint(TOKEN_OWNER_ADDRESS_1, U256::from(TOKEN_OWNER_AMOUNT_1), U256::zero(), "helo1".to_string())
         .unwrap_or_revert();
 
     test_token
-        .mint(TOKEN_OWNER_ADDRESS_2, U256::from(TOKEN_OWNER_AMOUNT_2))
+        .mint(TOKEN_OWNER_ADDRESS_2, U256::from(TOKEN_OWNER_AMOUNT_2), U256::zero(), "helo2".to_string())
         .unwrap_or_revert();
 }

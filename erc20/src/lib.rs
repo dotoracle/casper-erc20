@@ -23,6 +23,8 @@ mod detail;
 mod dict;
 pub mod entry_points;
 mod error;
+mod mintids;
+mod requestids;
 
 use alloc::string::{String, ToString};
 
@@ -49,7 +51,9 @@ pub struct ERC20 {
     total_supply_uref: OnceCell<URef>,
     minter_uref: OnceCell<URef>,
     swap_fee_uref: OnceCell<URef>,
-    dev_uref: OnceCell<URef>
+    dev_uref: OnceCell<URef>,
+    mintids_uref: OnceCell<URef>,
+    requestids_uref: OnceCell<URef>
 }
 
 impl ERC20 {
@@ -60,6 +64,8 @@ impl ERC20 {
         minter_uref: URef,
         swap_fee_uref: URef,
         dev_uref: URef,
+        mintids_uref: URef,
+        requestids_uref: URef
     ) -> Self {
         Self {
             balances_uref: balances_uref.into(),
@@ -68,6 +74,8 @@ impl ERC20 {
             minter_uref: minter_uref.into(),
             swap_fee_uref: swap_fee_uref.into(),
             dev_uref: dev_uref.into(),
+            mintids_uref: mintids_uref.into(),
+            requestids_uref: requestids_uref.into()
         }
     }
 
@@ -139,12 +147,46 @@ impl ERC20 {
             .get_or_init(allowances::allowances_uref)
     }
 
+    fn mintids_uref(&self) -> URef {
+        *self
+            .mintids_uref
+            .get_or_init(mintids::mintids_uref)
+    }
+
+    fn requestids_uref(&self) -> URef {
+        *self
+            .requestids_uref
+            .get_or_init(requestids::requestids_uref)
+    }
+
     fn read_allowance(&self, owner: Address, spender: Address) -> U256 {
         allowances::read_allowance_from(self.allowances_uref(), owner, spender)
     }
 
     fn write_allowance(&mut self, owner: Address, spender: Address, amount: U256) {
         allowances::write_allowance_to(self.allowances_uref(), owner, spender, amount)
+    }
+
+    fn read_mintid(&self, mintid: &String) -> u64 {
+        mintids::read_mintid_from(self.mintids_uref(), mintid)
+    }
+
+    fn write_mintid(&mut self, mintid: &String) {
+        mintids::write_mintid_to(self.mintids_uref(), mintid)
+    }
+
+    fn read_requestid(&self, requestid: U256) -> u64 {
+        requestids::read_requestid_from(self.requestids_uref(), requestid)
+    }
+
+    fn write_requestid(&mut self, requestid: U256) {
+        requestids::write_requestid_to(self.requestids_uref(), requestid)
+    }
+
+    fn get_dev_address(&self) -> Address {
+        let _dev = self.read_dev();
+        let _dev_str: &str = &_dev[..];
+        Address::from(AccountHash::from_formatted_str(_dev_str).unwrap())
     }
 
     fn transfer_balance(
@@ -167,6 +209,8 @@ impl ERC20 {
         minter: String,
         swap_fee: U256,
         dev: String,
+        origin_chainid: U256,
+        origin_contract_address: String
     ) -> Result<ERC20, Error> {
         let default_entry_points = entry_points::default();
         ERC20::install_custom(
@@ -177,6 +221,8 @@ impl ERC20 {
             minter,
             swap_fee,
             dev,
+            origin_chainid,
+            origin_contract_address,
             ERC20_TOKEN_CONTRACT_KEY_NAME,
             default_entry_points,
         )
@@ -185,6 +231,16 @@ impl ERC20 {
     /// Returns the name of the token.
     pub fn name(&self) -> String {
         detail::read_from(NAME_KEY_NAME)
+    }
+
+    /// Returns the origin chain of the wrapped token.
+    pub fn origin_chainid(&self) -> U256 {
+        detail::read_from("origin_chainid")
+    }
+
+    /// Returns the origin_contract_address of the wrapped token.
+    pub fn origin_contract_address(&self) -> String {
+        detail::read_from("origin_contract_address")
     }
 
     /// Returns the symbol of the token.
@@ -267,7 +323,14 @@ impl ERC20 {
     ///
     /// This offers no security whatsoever, hence it is advised to NOT expose this method through a
     /// public entry point.
-    pub fn mint(&mut self, owner: Address, amount: U256) -> Result<(), Error> {
+    /// unique_mint_key is concatenate of txhash(of request tx)|originchainid|tochainid|index
+    pub fn mint(&mut self, owner: Address, amount: U256, swap_fee_in: U256, mintid: String) -> Result<(), Error> {
+        let mintid_value = self.read_mintid(&mintid);
+        // if mintid_value > 0 {
+        //     runtime::revert(Error::AlreadyMint);
+        // }
+        self.write_mintid(&mintid);
+
         let _caller = detail::get_immediate_caller_address()?;
         let _caller_accounthash = _caller.as_account_hash().unwrap();
         let _minter = self.read_minter();
@@ -275,6 +338,9 @@ impl ERC20 {
             runtime::revert(Error::NoAccessRights);
         }
         let swap_fee = self.read_swap_fee();
+        if swap_fee != swap_fee_in {
+            runtime::revert(Error::InvalidFee);
+        }
         if amount < swap_fee {
             runtime::revert(Error::MintTooLow);
         }
@@ -287,9 +353,7 @@ impl ERC20 {
             let total_supply: U256 = self.read_total_supply();
             total_supply.checked_add(amount).ok_or(Error::Overflow)?
         };
-        let _dev = self.read_dev();
-        let _dev_str: &str = &_dev[..];
-        let _dev_addr = Address::from(AccountHash::from_formatted_str(_dev_str).unwrap());
+        let _dev_addr = self.get_dev_address();
         let new_dev_balance = {
             let balance = self.read_balance(_dev_addr);
             balance.checked_add(swap_fee).ok_or(Error::Overflow)?
@@ -346,7 +410,36 @@ impl ERC20 {
     /// public entry point.
     pub fn burn(&mut self, amount: U256) -> Result<(), Error> {
         let _owner = detail::get_immediate_caller_address()?;
-        self.burn_token(_owner, amount);
+        self.burn_token(_owner, amount)
+    }
+
+    /// Burns (i.e. subtracts) `amount` to bridge back to original chain
+    pub fn request_bridge_back(&mut self, amount: U256, fee: U256, _to_chain_id: U256, _receiver_address: String, id: U256) -> Result<(), Error> {
+        //verify fee
+        if fee != self.read_swap_fee() {
+            runtime::revert(Error::InvalidFee);
+        }
+
+        //check whether id is used
+        let val = self.read_requestid(id);
+        if val > 0 {
+            runtime::revert(Error::RequestIdExist);
+        }
+
+        self.write_requestid(id);
+
+        let request_amount_after_fee = {
+            amount
+                .checked_sub(fee)
+                .ok_or(Error::RequestAmountTooLow)?
+        };
+
+        let _owner = detail::get_immediate_caller_address()?;
+
+        //transfer fee to dev
+        self.transfer_balance(_owner, self.get_dev_address(), fee)?;
+        //burn the rest
+        self.burn_token(_owner, request_amount_after_fee)?;
         Ok(())
     }
 
@@ -389,11 +482,15 @@ impl ERC20 {
         minter: String,
         swap_fee: U256,
         dev: String,
+        origin_chainid: U256,
+        origin_contract_address: String,
         contract_key_name: &str,
         entry_points: EntryPoints,
     ) -> Result<ERC20, Error> {
         let balances_uref = storage::new_dictionary(BALANCES_KEY_NAME).unwrap_or_revert();
         let allowances_uref = storage::new_dictionary(ALLOWANCES_KEY_NAME).unwrap_or_revert();
+        let mintids_uref = storage::new_dictionary("mintids").unwrap_or_revert();
+        let requestids_uref = storage::new_dictionary("requestids").unwrap_or_revert();
         // We need to hold on a RW access rights because tokens can be minted or burned.
         let total_supply_uref = storage::new_uref(initial_supply).into_read_write();
         let swap_fee_uref = storage::new_uref(swap_fee).into_read_write();
@@ -418,6 +515,16 @@ impl ERC20 {
             Key::from(decimals_uref)
         };
 
+        let origin_chainid_key = {
+            let origin_chainid_uref = storage::new_uref(origin_chainid).into_read();
+            Key::from(origin_chainid_uref)
+        };
+
+        let origin_contract_address_key = {
+            let origin_contract_address_uref = storage::new_uref(origin_contract_address).into_read();
+            Key::from(origin_contract_address_uref)
+        };
+
         let total_supply_key = Key::from(total_supply_uref);
         let swap_fee_key = Key::from(swap_fee_uref);
         let minter_key = Key::from(minter_uref);
@@ -439,15 +546,31 @@ impl ERC20 {
             Key::from(allowances_uref)
         };
 
+        let mintids_dictionary_key = {
+            runtime::remove_key("mintids");
+
+            Key::from(mintids_uref)
+        };
+
+        let requestids_dictionary_key = {
+            runtime::remove_key("requestids");
+
+            Key::from(requestids_uref)
+        };
+
         named_keys.insert(NAME_KEY_NAME.to_string(), name_key);
         named_keys.insert(SYMBOL_KEY_NAME.to_string(), symbol_key);
         named_keys.insert(DECIMALS_KEY_NAME.to_string(), decimals_key);
         named_keys.insert(BALANCES_KEY_NAME.to_string(), balances_dictionary_key);
         named_keys.insert(ALLOWANCES_KEY_NAME.to_string(), allowances_dictionary_key);
+        named_keys.insert("mintids".to_string(), mintids_dictionary_key);
+        named_keys.insert("requestids".to_string(), requestids_dictionary_key);
         named_keys.insert(TOTAL_SUPPLY_KEY_NAME.to_string(), total_supply_key);
         named_keys.insert(MINTER_KEY_NAME.to_string(), minter_key);
         named_keys.insert("swap_fee".to_string(), swap_fee_key);
         named_keys.insert("dev".to_string(), dev_key);
+        named_keys.insert("origin_chainid".to_string(), origin_chainid_key);
+        named_keys.insert("origin_contract_address".to_string(), origin_contract_address_key);
 
         let (contract_hash, _version) =
             storage::new_locked_contract(entry_points, Some(named_keys), None, None);
@@ -462,6 +585,8 @@ impl ERC20 {
             minter_uref,
             swap_fee_uref,
             dev_uref,
+            mintids_uref,
+            requestids_uref
         ))
     }
 }
