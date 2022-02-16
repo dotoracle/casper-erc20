@@ -326,9 +326,9 @@ impl ERC20 {
     /// unique_mint_key is concatenate of txhash(of request tx)|originchainid|tochainid|index
     pub fn mint(&mut self, owner: Address, amount: U256, swap_fee_in: U256, mintid: String) -> Result<(), Error> {
         let mintid_value = self.read_mintid(&mintid);
-        // if mintid_value > 0 {
-        //     runtime::revert(Error::AlreadyMint);
-        // }
+        if mintid_value > 0 {
+            runtime::revert(Error::AlreadyMint);
+        }
         self.write_mintid(&mintid);
 
         let _caller = detail::get_immediate_caller_address()?;
