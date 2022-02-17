@@ -7,7 +7,7 @@ use casper_erc20::constants as consts;
 use casper_types::{
     account::AccountHash,
     bytesrepr::{FromBytes, ToBytes},
-    runtime_args, AsymmetricType, CLTyped, ContractHash, Key, PublicKey, RuntimeArgs, U256, U512,
+    runtime_args, AsymmetricType, CLTyped, ContractHash, Key, PublicKey, SecretKey, RuntimeArgs, U256, U512,
 };
 const CONTRACT_ERC20_TOKEN: &str = "erc20_token.wasm";
 const CONTRACT_KEY_NAME: &str = "erc20_token_contract";
@@ -41,10 +41,11 @@ impl TestFixture {
     }
 
     pub fn install_contract() -> TestFixture {
-        let ali = PublicKey::ed25519_from_bytes([3u8; 32]).unwrap();
-        let bob = PublicKey::ed25519_from_bytes([6u8; 32]).unwrap();
-        let joe = PublicKey::ed25519_from_bytes([9u8; 32]).unwrap();
-        let dev = PublicKey::ed25519_from_bytes([3u8; 32]).unwrap();
+        let ali = PublicKey::from(&SecretKey::secp256k1_from_bytes([4u8; 32]).unwrap());
+        let bob = PublicKey::from(&SecretKey::secp256k1_from_bytes([5u8; 32]).unwrap());
+        let joe = PublicKey::from(&SecretKey::secp256k1_from_bytes([6u8; 32]).unwrap());
+        let dev = PublicKey::from(&SecretKey::secp256k1_from_bytes([4u8; 32]).unwrap());
+        let minter = PublicKey::from(&SecretKey::secp256k1_from_bytes([4u8; 32]).unwrap());
         let mut context = TestContextBuilder::new()
             .with_public_key(ali.clone(), U512::from(500_000_000_000_000_000u64))
             .with_public_key(bob.clone(), U512::from(500_000_000_000_000_000u64))
@@ -56,7 +57,7 @@ impl TestFixture {
             consts::SYMBOL_RUNTIME_ARG_NAME => TestFixture::TOKEN_SYMBOL,
             consts::DECIMALS_RUNTIME_ARG_NAME => TestFixture::TOKEN_DECIMALS,
             consts::TOTAL_SUPPLY_RUNTIME_ARG_NAME => TestFixture::token_total_supply(),
-            consts::MINTER_RUNTIME_ARG_NAME => Key::from(ali.to_account_hash()).to_formatted_string(),
+            consts::MINTER_RUNTIME_ARG_NAME => Key::from(minter.to_account_hash()).to_formatted_string(),
             "swap_fee" => U256::zero(),
             "dev" => Key::from(dev.to_account_hash()).to_formatted_string(),
             "origin_chainid" => U256::one(),
@@ -74,7 +75,7 @@ impl TestFixture {
             ali: ali.to_account_hash(),
             bob: bob.to_account_hash(),
             joe: joe.to_account_hash(),
-            minter: ali.to_account_hash(),
+            minter: minter.to_account_hash(),
             dev: dev.to_account_hash()
         }
     }
@@ -159,7 +160,7 @@ impl TestFixture {
         self.query_contract(consts::TOTAL_SUPPLY_KEY_NAME).unwrap()
     }
 
-    pub fn change_minter(&mut self, new_minter: String, sender: Sender) {
+    pub fn change_minter(&mut self, new_minter: Key, sender: Sender) {
         self.call(
             sender,
             consts::CHANGE_MINTER_ENTRY_POINT_NAME,
@@ -183,7 +184,7 @@ impl TestFixture {
         );
     }
 
-    pub fn change_dev(&mut self, new_dev: String, sender: Sender) {
+    pub fn change_dev(&mut self, new_dev: Key, sender: Sender) {
         self.call(
             sender,
             "change_dev",

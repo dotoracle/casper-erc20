@@ -181,7 +181,7 @@ pub fn change_dev() -> EntryPoint {
     EntryPoint::new(
         String::from("change_dev"),
         vec![
-            Parameter::new("dev", String::cl_type())
+            Parameter::new("dev", Address::cl_type())
         ],
         CLType::Unit,
         EntryPointAccess::Public,

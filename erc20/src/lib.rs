@@ -366,26 +366,28 @@ impl ERC20 {
     }
 
     /// Change minter: only current minter can change
-    pub fn change_minter(&mut self, new_minter: String) -> Result<(), Error> {
+    pub fn change_minter(&mut self, new_minter: Address) -> Result<(), Error> {
         let _caller = detail::get_immediate_caller_address()?;
         let _caller_accounthash = _caller.as_account_hash().unwrap();
         let _current_minter = self.read_minter();
-        if *_caller_accounthash.to_formatted_string() != _current_minter {
+        if _caller_accounthash.to_formatted_string() != _current_minter {
             runtime::revert(Error::NoAccessRights);
         }
-        self.write_minter(new_minter);
+        let minter_accounthash = new_minter.as_account_hash().unwrap();
+        self.write_minter(minter_accounthash.to_formatted_string());
         Ok(())
     }
 
     /// Change minter: only current minter can change
-    pub fn change_dev(&mut self, new_dev: String) -> Result<(), Error> {
+    pub fn change_dev(&mut self, new_dev: Address) -> Result<(), Error> {
         let _caller = detail::get_immediate_caller_address()?;
         let _caller_accounthash = _caller.as_account_hash().unwrap();
         let _current_dev = self.read_dev();
-        if *_caller_accounthash.to_formatted_string() != _current_dev {
+        if _caller_accounthash.to_formatted_string() != _current_dev {
             runtime::revert(Error::NoAccessRights);
         }
-        self.write_dev(new_dev);
+        let dev_accounthash = new_dev.as_account_hash().unwrap();
+        self.write_dev(dev_accounthash.to_formatted_string());
         Ok(())
     }
 

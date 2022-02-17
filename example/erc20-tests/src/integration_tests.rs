@@ -111,7 +111,7 @@ mod tests {
         println!("dev {}", dev);
 
         //mint
-        fixture.mint(Key::from(fixture.bob), U256::from(20), U256::zero(), "mintid1".to_string(), Sender(fixture.ali));
+        fixture.mint(Key::from(fixture.bob), U256::from(20), U256::zero(), "mintid1".to_string(), Sender(fixture.minter));
         assert_eq!(
             fixture.balance_of(Key::from(fixture.bob)),
             Some(U256::from(20))
@@ -147,7 +147,7 @@ mod tests {
         let mut fixture = TestFixture::install_contract();
 
         //change dev fee
-        fixture.change_dev(fixture.bob.to_formatted_string(), Sender(fixture.dev));
+        fixture.change_dev(Key::from(fixture.bob), Sender(fixture.dev));
         
         let dev = fixture.dev();
         assert_eq!(dev, fixture.bob.to_formatted_string());
@@ -211,7 +211,7 @@ mod tests {
         let mut current_minter = fixture.get_minter();
         assert_eq!(current_minter, fixture.minter.to_formatted_string());
 
-        fixture.change_minter(fixture.bob.to_formatted_string(), Sender(fixture.minter));
+        fixture.change_minter(Key::from(fixture.bob), Sender(fixture.minter));
 
         current_minter = fixture.get_minter();
         assert_eq!(current_minter, fixture.bob.to_formatted_string());

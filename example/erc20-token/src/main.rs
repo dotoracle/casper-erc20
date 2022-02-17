@@ -104,14 +104,14 @@ pub extern "C" fn mint() {
 
 #[no_mangle]
 pub extern "C" fn change_minter() {
-    let new_minter: String = runtime::get_named_arg(MINTER_RUNTIME_ARG_NAME);
+    let new_minter: Address = runtime::get_named_arg(MINTER_RUNTIME_ARG_NAME);
 
     ERC20::default().change_minter(new_minter).unwrap_or_revert();
 }
 
 #[no_mangle]
 pub extern "C" fn change_dev() {
-    let dev: String = runtime::get_named_arg("dev");
+    let dev: Address = runtime::get_named_arg("dev");
 
     ERC20::default().change_dev(dev).unwrap_or_revert();
 }
