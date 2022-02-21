@@ -174,13 +174,13 @@ mod tests {
         fixture.mint(Key::from(fixture.bob), U256::from(1000), U256::from(0), "mintid1".to_string(), Sender(fixture.minter));
     }
 
-    #[should_panic(expected = "ApiError::EarlyEndOfStream [17]")]
+    #[should_panic(expected = "ApiError::User(65527) [131063]")]
     #[test]
     fn should_not_request_bridge_back_with_same_id() {
         let mut fixture = TestFixture::install_contract();
         
-        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), U256::from(100), Sender(fixture.ali));
-        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), U256::from(100), Sender(fixture.ali));
+        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), U256::from(1), Sender(fixture.ali));
+        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), U256::from(1), Sender(fixture.ali));
     }
 
     #[test]
@@ -193,7 +193,7 @@ mod tests {
         let dev_balance = fixture.balance_of(Key::from(fixture.dev)).unwrap_or_default();
 
         //bridge 1000
-        fixture.request_bridge_back(U256::from(1000), U256::from(10), U256::from(10), "receiver_address".to_string(), U256::from(100), Sender(fixture.bob));
+        fixture.request_bridge_back(U256::from(1000), U256::from(10), U256::from(10), "receiver_address".to_string(), U256::from(1), Sender(fixture.bob));
 
         //bob should have less than 1k compared
         let bob_balance = fixture.balance_of(Key::from(fixture.bob)).unwrap_or_default();

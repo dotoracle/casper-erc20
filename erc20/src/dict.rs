@@ -12,6 +12,11 @@ pub(crate) fn get_uref_total_supply() -> URef {
 }
 
 #[inline]
+pub(crate) fn get_uref_requestid() -> URef {
+    detail::get_uref("requestid")
+}
+
+#[inline]
 pub(crate) fn get_uref_minter() -> URef {
     detail::get_uref("minter")
 }
@@ -52,6 +57,16 @@ pub(crate) fn read_swap_fee_from(uref: URef) -> U256 {
 
 /// Writes a total supply to a specific [`URef`].
 pub(crate) fn write_swap_fee_to(uref: URef, value: U256) {
+    storage::write(uref, value);
+}
+
+/// Reads a current request id from a specified [`URef`].
+pub(crate) fn read_requestid_from(uref: URef) -> U256 {
+    storage::read(uref).unwrap_or_revert().unwrap_or_revert()
+}
+
+/// Writes a request id to a specific [`URef`].
+pub(crate) fn write_requestid_to(uref: URef, value: U256) {
     storage::write(uref, value);
 }
 

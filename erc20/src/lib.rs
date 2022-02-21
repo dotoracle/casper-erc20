@@ -24,7 +24,6 @@ mod dict;
 pub mod entry_points;
 mod error;
 mod mintids;
-mod requestids;
 
 use alloc::string::{String, ToString};
 
@@ -53,7 +52,7 @@ pub struct ERC20 {
     swap_fee_uref: OnceCell<URef>,
     dev_uref: OnceCell<URef>,
     mintids_uref: OnceCell<URef>,
-    requestids_uref: OnceCell<URef>
+    requestid_uref: OnceCell<URef>
 }
 
 impl ERC20 {
@@ -65,7 +64,7 @@ impl ERC20 {
         swap_fee_uref: URef,
         dev_uref: URef,
         mintids_uref: URef,
-        requestids_uref: URef
+        requestid_uref: URef
     ) -> Self {
         Self {
             balances_uref: balances_uref.into(),
@@ -75,7 +74,7 @@ impl ERC20 {
             swap_fee_uref: swap_fee_uref.into(),
             dev_uref: dev_uref.into(),
             mintids_uref: mintids_uref.into(),
-            requestids_uref: requestids_uref.into()
+            requestid_uref: requestid_uref.into()
         }
     }
 
@@ -153,10 +152,10 @@ impl ERC20 {
             .get_or_init(mintids::mintids_uref)
     }
 
-    fn requestids_uref(&self) -> URef {
+    fn requestid_uref(&self) -> URef {
         *self
-            .requestids_uref
-            .get_or_init(requestids::requestids_uref)
+            .requestid_uref
+            .get_or_init(dict::get_uref_requestid)
     }
 
     fn read_allowance(&self, owner: Address, spender: Address) -> U256 {
@@ -175,12 +174,12 @@ impl ERC20 {
         mintids::write_mintid_to(self.mintids_uref(), mintid)
     }
 
-    fn read_requestid(&self, requestid: U256) -> u64 {
-        requestids::read_requestid_from(self.requestids_uref(), requestid)
+    fn read_requestid(&self) -> U256 {
+        dict::read_requestid_from(self.requestid_uref())
     }
 
-    fn write_requestid(&mut self, requestid: U256) {
-        requestids::write_requestid_to(self.requestids_uref(), requestid)
+    fn write_requestid(&self, requestid: U256) {
+        dict::write_requestid_to(self.requestid_uref(), requestid)
     }
 
     fn get_dev_address(&self) -> Address {
@@ -423,8 +422,8 @@ impl ERC20 {
         }
 
         //check whether id is used
-        let val = self.read_requestid(id);
-        if val > 0 {
+        let val = self.read_requestid();
+        if (val + U256::one()) != id {
             runtime::revert(Error::RequestIdExist);
         }
 
@@ -492,7 +491,7 @@ impl ERC20 {
         let balances_uref = storage::new_dictionary(BALANCES_KEY_NAME).unwrap_or_revert();
         let allowances_uref = storage::new_dictionary(ALLOWANCES_KEY_NAME).unwrap_or_revert();
         let mintids_uref = storage::new_dictionary("mintids").unwrap_or_revert();
-        let requestids_uref = storage::new_dictionary("requestids").unwrap_or_revert();
+        let requestid_uref = storage::new_uref(U256::zero()).into_read_write();
         // We need to hold on a RW access rights because tokens can be minted or burned.
         let total_supply_uref = storage::new_uref(initial_supply).into_read_write();
         let swap_fee_uref = storage::new_uref(swap_fee).into_read_write();
@@ -531,6 +530,7 @@ impl ERC20 {
         let swap_fee_key = Key::from(swap_fee_uref);
         let minter_key = Key::from(minter_uref);
         let dev_key = Key::from(dev_uref);
+        let requestid_key = Key::from(requestid_uref);
 
         let balances_dictionary_key = {
             // Sets up initial balance for the caller - either an account, or a contract.
@@ -554,19 +554,13 @@ impl ERC20 {
             Key::from(mintids_uref)
         };
 
-        let requestids_dictionary_key = {
-            runtime::remove_key("requestids");
-
-            Key::from(requestids_uref)
-        };
-
         named_keys.insert(NAME_KEY_NAME.to_string(), name_key);
         named_keys.insert(SYMBOL_KEY_NAME.to_string(), symbol_key);
         named_keys.insert(DECIMALS_KEY_NAME.to_string(), decimals_key);
         named_keys.insert(BALANCES_KEY_NAME.to_string(), balances_dictionary_key);
         named_keys.insert(ALLOWANCES_KEY_NAME.to_string(), allowances_dictionary_key);
         named_keys.insert("mintids".to_string(), mintids_dictionary_key);
-        named_keys.insert("requestids".to_string(), requestids_dictionary_key);
+        named_keys.insert("requestid".to_string(), requestid_key);
         named_keys.insert(TOTAL_SUPPLY_KEY_NAME.to_string(), total_supply_key);
         named_keys.insert(MINTER_KEY_NAME.to_string(), minter_key);
         named_keys.insert("swap_fee".to_string(), swap_fee_key);
@@ -588,7 +582,7 @@ impl ERC20 {
             swap_fee_uref,
             dev_uref,
             mintids_uref,
-            requestids_uref
+            requestid_uref
         ))
     }
 }
