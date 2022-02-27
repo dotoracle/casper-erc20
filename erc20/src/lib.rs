@@ -165,16 +165,16 @@ impl ERC20 {
     fn write_allowance(&mut self, owner: Address, spender: Address, amount: U256) {
         allowances::write_allowance_to(self.allowances_uref(), owner, spender, amount)
     }
-
-    fn read_mintid(&self, mintid: &String) -> u64 {
+    /// Returns the mintid whether mint or not.
+    pub fn read_mintid(&self, mintid: &String) -> u64 {
         mintids::read_mintid_from(self.mintids_uref(), mintid)
     }
 
     fn write_mintid(&mut self, mintid: &String) {
         mintids::write_mintid_to(self.mintids_uref(), mintid)
     }
-
-    fn read_requestid(&self) -> U256 {
+    /// Returns the current request id.
+    pub fn read_requestid(&self) -> U256 {
         dict::read_requestid_from(self.requestid_uref())
     }
 

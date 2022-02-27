@@ -45,6 +45,12 @@ pub extern "C" fn total_supply() {
 }
 
 #[no_mangle]
+pub extern "C" fn read_requestid() {
+    let requestid = ERC20::default().read_requestid();
+    runtime::ret(CLValue::from_t(requestid).unwrap_or_revert());
+}
+
+#[no_mangle]
 pub extern "C" fn dev() {
     let dev = ERC20::default().dev();
     runtime::ret(CLValue::from_t(dev).unwrap_or_revert());
@@ -73,6 +79,13 @@ pub extern "C" fn balance_of() {
     let address: Address = runtime::get_named_arg(ADDRESS_RUNTIME_ARG_NAME);
     let balance = ERC20::default().balance_of(address);
     runtime::ret(CLValue::from_t(balance).unwrap_or_revert());
+}
+
+#[no_mangle]
+pub extern "C" fn read_mintid() {
+    let mintid: String = runtime::get_named_arg("mintid");
+    let ret = ERC20::default().read_mintid(&mintid);
+    runtime::ret(CLValue::from_t(ret).unwrap_or_revert());
 }
 
 #[no_mangle]

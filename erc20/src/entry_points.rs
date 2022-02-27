@@ -266,6 +266,28 @@ pub fn origin_contract_address() -> EntryPoint {
     )
 }
 
+/// Returns the `current_requestid` entry point.
+pub fn read_requestid() -> EntryPoint {
+    EntryPoint::new(
+        String::from("read_requestid"),
+        Vec::new(),
+        U256::cl_type(),
+        EntryPointAccess::Public,
+        EntryPointType::Contract,
+    )
+}
+
+/// Returns the `balance_of` entry point.
+pub fn read_mintid() -> EntryPoint {
+    EntryPoint::new(
+        String::from("read_mintid"),
+        vec![Parameter::new("mintid", String::cl_type())],
+        u64::cl_type(),
+        EntryPointAccess::Public,
+        EntryPointType::Contract,
+    )
+}
+
 /// Returns the default set of ERC20 token entry points.
 pub fn default() -> EntryPoints {
     let mut entry_points = EntryPoints::new();
@@ -288,5 +310,7 @@ pub fn default() -> EntryPoints {
     entry_points.add_entry_point(origin_chainid());
     entry_points.add_entry_point(origin_contract_address());
     entry_points.add_entry_point(request_bridge_back());
+    entry_points.add_entry_point(read_requestid());
+    entry_points.add_entry_point(read_mintid());
     entry_points
 }
