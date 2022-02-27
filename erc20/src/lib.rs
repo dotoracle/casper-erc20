@@ -24,6 +24,7 @@ mod dict;
 pub mod entry_points;
 mod error;
 mod mintids;
+mod request_map;
 
 use alloc::string::{String, ToString};
 
@@ -52,7 +53,8 @@ pub struct ERC20 {
     swap_fee_uref: OnceCell<URef>,
     dev_uref: OnceCell<URef>,
     mintids_uref: OnceCell<URef>,
-    requestid_uref: OnceCell<URef>
+    requestid_uref: OnceCell<URef>,
+    request_map_uref: OnceCell<URef>
 }
 
 impl ERC20 {
@@ -64,7 +66,8 @@ impl ERC20 {
         swap_fee_uref: URef,
         dev_uref: URef,
         mintids_uref: URef,
-        requestid_uref: URef
+        requestid_uref: URef,
+        request_map_uref: URef
     ) -> Self {
         Self {
             balances_uref: balances_uref.into(),
@@ -74,7 +77,8 @@ impl ERC20 {
             swap_fee_uref: swap_fee_uref.into(),
             dev_uref: dev_uref.into(),
             mintids_uref: mintids_uref.into(),
-            requestid_uref: requestid_uref.into()
+            requestid_uref: requestid_uref.into(),
+            request_map_uref: request_map_uref.into()
         }
     }
 
@@ -138,6 +142,18 @@ impl ERC20 {
 
     fn write_balance(&mut self, owner: Address, amount: U256) {
         balances::write_balance_to(self.balances_uref(), owner, amount)
+    }
+
+    fn request_map_uref(&self) -> URef {
+        *self.request_map_uref.get_or_init(request_map::request_map_uref)
+    }
+    /// Returns read_request_mapn.
+    pub fn read_request_map(&self, unique_id: &String) -> U256 {
+        request_map::read_request_map_from(self.request_map_uref(), unique_id)
+    }
+
+    fn write_request_map(&mut self, unique_id: &String, index: U256) {
+        request_map::write_request_map_to(self.request_map_uref(), unique_id, index)
     }
 
     fn allowances_uref(&self) -> URef {
@@ -415,19 +431,23 @@ impl ERC20 {
     }
 
     /// Burns (i.e. subtracts) `amount` to bridge back to original chain
-    pub fn request_bridge_back(&mut self, amount: U256, fee: U256, _to_chain_id: U256, _receiver_address: String, id: U256) -> Result<(), Error> {
+    pub fn request_bridge_back(&mut self, amount: U256, fee: U256, _to_chain_id: U256, _receiver_address: String, unique_id: String) -> Result<(), Error> {
         //verify fee
         if fee != self.read_swap_fee() {
             runtime::revert(Error::InvalidFee);
         }
 
-        //check whether id is used
-        let val = self.read_requestid();
-        if (val + U256::one()) != id {
+        //read request map
+        let request_map_result = self.read_request_map(&unique_id);
+        if request_map_result != U256::zero() {
             runtime::revert(Error::RequestIdExist);
         }
+        //check whether id is used
+        let val = self.read_requestid();
+        let next_index = val + U256::one();
 
-        self.write_requestid(id);
+        self.write_requestid(next_index);
+        self.write_request_map(&unique_id, next_index);
 
         let request_amount_after_fee = {
             amount
@@ -495,6 +515,7 @@ impl ERC20 {
         // We need to hold on a RW access rights because tokens can be minted or burned.
         let total_supply_uref = storage::new_uref(initial_supply).into_read_write();
         let swap_fee_uref = storage::new_uref(swap_fee).into_read_write();
+        let request_map_uref = storage::new_dictionary("request_map").unwrap_or_revert();
 
         let minter_uref = storage::new_uref(minter).into_read_write();
         let dev_uref = storage::new_uref(dev).into_read_write();
@@ -554,6 +575,12 @@ impl ERC20 {
             Key::from(mintids_uref)
         };
 
+        let request_map_dictionary_key = {
+            runtime::remove_key("request_map");
+
+            Key::from(request_map_uref)
+        };
+
         named_keys.insert(NAME_KEY_NAME.to_string(), name_key);
         named_keys.insert(SYMBOL_KEY_NAME.to_string(), symbol_key);
         named_keys.insert(DECIMALS_KEY_NAME.to_string(), decimals_key);
@@ -561,6 +588,7 @@ impl ERC20 {
         named_keys.insert(ALLOWANCES_KEY_NAME.to_string(), allowances_dictionary_key);
         named_keys.insert("mintids".to_string(), mintids_dictionary_key);
         named_keys.insert("requestid".to_string(), requestid_key);
+        named_keys.insert("request_map".to_string(), request_map_dictionary_key);
         named_keys.insert(TOTAL_SUPPLY_KEY_NAME.to_string(), total_supply_key);
         named_keys.insert(MINTER_KEY_NAME.to_string(), minter_key);
         named_keys.insert("swap_fee".to_string(), swap_fee_key);
@@ -582,7 +610,8 @@ impl ERC20 {
             swap_fee_uref,
             dev_uref,
             mintids_uref,
-            requestid_uref
+            requestid_uref,
+            request_map_uref
         ))
     }
 }

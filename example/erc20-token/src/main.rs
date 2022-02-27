@@ -81,6 +81,14 @@ pub extern "C" fn balance_of() {
     runtime::ret(CLValue::from_t(balance).unwrap_or_revert());
 }
 
+
+#[no_mangle]
+pub extern "C" fn read_request_map() {
+    let unique_id: String = runtime::get_named_arg("id");
+    let value = ERC20::default().read_request_map(&unique_id);
+    runtime::ret(CLValue::from_t(value).unwrap_or_revert());
+}
+
 #[no_mangle]
 pub extern "C" fn read_mintid() {
     let mintid: String = runtime::get_named_arg("mintid");
@@ -167,7 +175,7 @@ pub extern "C" fn request_bridge_back() {
     let fee: U256 = runtime::get_named_arg("fee");
     let to_chainid: U256 = runtime::get_named_arg("to_chainid");
     let receiver_address: String = runtime::get_named_arg("receiver_address");
-    let id: U256 = runtime::get_named_arg("id");
+    let id: String = runtime::get_named_arg("id");
 
     ERC20::default()
         .request_bridge_back(amount, fee, to_chainid, receiver_address, id)

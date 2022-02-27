@@ -7,8 +7,10 @@ use casper_erc20::constants as consts;
 use casper_types::{
     account::AccountHash,
     bytesrepr::{FromBytes, ToBytes},
-    runtime_args, AsymmetricType, CLTyped, ContractHash, Key, PublicKey, SecretKey, RuntimeArgs, U256, U512,
+    runtime_args, CLTyped, ContractHash, Key, PublicKey, SecretKey, RuntimeArgs, U256, U512,
 };
+
+
 const CONTRACT_ERC20_TOKEN: &str = "erc20_token.wasm";
 const CONTRACT_KEY_NAME: &str = "erc20_token_contract";
 
@@ -152,6 +154,19 @@ impl TestFixture {
         Some(value.into_t::<U256>().unwrap())
     }
 
+    pub fn read_request_map(&self, id: String) -> Option<U256> {
+        let preimage = id.as_bytes();
+        let item_key = hex::encode(&blake2b256(&preimage));
+
+        let key = Key::Hash(self.contract_hash().value());
+        let value = self
+            .context
+            .query_dictionary_item(key, Some("request_map".to_string()), item_key)
+            .ok()?;
+
+        Some(value.into_t::<U256>().unwrap())
+    }
+
     pub fn get_minter(&self) -> String {
         self.query_contract(consts::MINTER_RUNTIME_ARG_NAME).unwrap()
     }
@@ -170,7 +185,7 @@ impl TestFixture {
         );
     }
 
-    pub fn request_bridge_back(&mut self, amount: U256, fee: U256, to_chainid: U256, receiver_address: String, id: U256, sender: Sender) {
+    pub fn request_bridge_back(&mut self, amount: U256, fee: U256, to_chainid: U256, receiver_address: String, id: String, sender: Sender) {
         self.call(
             sender,
             "request_bridge_back",

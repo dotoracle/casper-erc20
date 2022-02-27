@@ -179,8 +179,19 @@ mod tests {
     fn should_not_request_bridge_back_with_same_id() {
         let mut fixture = TestFixture::install_contract();
         
-        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), U256::from(1), Sender(fixture.ali));
-        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), U256::from(1), Sender(fixture.ali));
+        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), "mint1".to_string(), Sender(fixture.ali));
+        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), "mint1".to_string(), Sender(fixture.ali));
+    }
+
+    #[test]
+    fn should_request_map_index_increase() {
+        let mut fixture = TestFixture::install_contract();
+        let mut current_index = fixture.read_request_map("mint1".to_string()).unwrap_or_default();
+        assert_eq!(current_index, U256::zero());
+        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), "mint1".to_string(), Sender(fixture.ali));
+        current_index = fixture.read_request_map("mint1".to_string()).unwrap_or_default();
+        assert_eq!(current_index, U256::one());
+        //fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), "mint1".to_string(), Sender(fixture.ali));
     }
 
     #[test]
@@ -193,7 +204,7 @@ mod tests {
         let dev_balance = fixture.balance_of(Key::from(fixture.dev)).unwrap_or_default();
 
         //bridge 1000
-        fixture.request_bridge_back(U256::from(1000), U256::from(10), U256::from(10), "receiver_address".to_string(), U256::from(1), Sender(fixture.bob));
+        fixture.request_bridge_back(U256::from(1000), U256::from(10), U256::from(10), "receiver_address".to_string(), "mint1".to_string(), Sender(fixture.bob));
 
         //bob should have less than 1k compared
         let bob_balance = fixture.balance_of(Key::from(fixture.bob)).unwrap_or_default();

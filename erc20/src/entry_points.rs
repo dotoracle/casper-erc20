@@ -155,7 +155,7 @@ pub fn request_bridge_back() -> EntryPoint {
             Parameter::new("fee", U256::cl_type()),
             Parameter::new("to_chainid", U256::cl_type()),
             Parameter::new("receiver_address", String::cl_type()),
-            Parameter::new("id", U256::cl_type()),
+            Parameter::new("id", String::cl_type()),
         ],
         CLType::Unit,
         EntryPointAccess::Public,
@@ -288,6 +288,17 @@ pub fn read_mintid() -> EntryPoint {
     )
 }
 
+/// Returns the request index.
+pub fn read_request_map() -> EntryPoint {
+    EntryPoint::new(
+        String::from("read_request_map"),
+        vec![Parameter::new("id", String::cl_type())],
+        U256::cl_type(),
+        EntryPointAccess::Public,
+        EntryPointType::Contract,
+    )
+}
+
 /// Returns the default set of ERC20 token entry points.
 pub fn default() -> EntryPoints {
     let mut entry_points = EntryPoints::new();
@@ -312,5 +323,6 @@ pub fn default() -> EntryPoints {
     entry_points.add_entry_point(request_bridge_back());
     entry_points.add_entry_point(read_requestid());
     entry_points.add_entry_point(read_mintid());
+    entry_points.add_entry_point(read_request_map());
     entry_points
 }
