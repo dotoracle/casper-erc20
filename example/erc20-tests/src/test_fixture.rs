@@ -159,6 +159,7 @@ impl TestFixture {
         let item_key = hex::encode(&blake2b256(&preimage));
 
         let key = Key::Hash(self.contract_hash().value());
+        println!("id {:?} {:?}", id, key);
         let value = self
             .context
             .query_dictionary_item(key, Some("request_map".to_string()), item_key)
@@ -167,6 +168,10 @@ impl TestFixture {
         Some(value.into_t::<U256>().unwrap())
     }
 
+    pub fn compute_request_map(&self, id: String) -> String {
+        let preimage = id.as_bytes();
+        hex::encode(&blake2b256(&preimage))
+    }
     pub fn get_minter(&self) -> String {
         self.query_contract(consts::MINTER_RUNTIME_ARG_NAME).unwrap()
     }

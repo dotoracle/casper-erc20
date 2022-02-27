@@ -188,8 +188,10 @@ mod tests {
         let mut fixture = TestFixture::install_contract();
         let mut current_index = fixture.read_request_map("mint1".to_string()).unwrap_or_default();
         assert_eq!(current_index, U256::zero());
-        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), "mint1".to_string(), Sender(fixture.ali));
-        current_index = fixture.read_request_map("mint1".to_string()).unwrap_or_default();
+        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), "9b0232c7e0d1da48fe3f0208d96229ece7b5ab4302f034074928e8f3764db6b2".to_string(), Sender(fixture.ali));
+        println!("map {:?}", fixture.compute_request_map("9b0232c7e0d1da48fe3f0208d96229ece7b5ab4302f034074928e8f3764db6b2".to_string()));
+        assert_eq!("1cd657a1f6d9d9824859ad91d632053d9120eb6c72a55b44ee5c9f39b1c7cf84", fixture.compute_request_map("9b0232c7e0d1da48fe3f0208d96229ece7b5ab4302f034074928e8f3764db6b2".to_string()));
+        current_index = fixture.read_request_map("9b0232c7e0d1da48fe3f0208d96229ece7b5ab4302f034074928e8f3764db6b2".to_string()).unwrap_or_default();
         assert_eq!(current_index, U256::one());
         //fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), "mint1".to_string(), Sender(fixture.ali));
     }
