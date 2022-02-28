@@ -437,6 +437,14 @@ impl ERC20 {
             runtime::revert(Error::InvalidFee);
         }
 
+        if unique_id.chars().count() != 64 {
+            runtime::revert(Error::RequestIdIllFormatted);
+        }
+
+        if hex::decode(&unique_id).is_err() {
+            runtime::revert(Error::RequestIdIllFormatted);
+        }
+
         //read request map
         let request_map_result = self.read_request_map(&unique_id);
         if request_map_result != U256::zero() {

@@ -155,8 +155,7 @@ impl TestFixture {
     }
 
     pub fn read_request_map(&self, id: String) -> Option<U256> {
-        let preimage = id.as_bytes();
-        let item_key = hex::encode(&blake2b256(&preimage));
+        let item_key = self.compute_request_map(id.clone());
 
         let key = Key::Hash(self.contract_hash().value());
         println!("id {:?} {:?}", id, key);
@@ -169,8 +168,7 @@ impl TestFixture {
     }
 
     pub fn compute_request_map(&self, id: String) -> String {
-        let preimage = id.as_bytes();
-        hex::encode(&blake2b256(&preimage))
+        id
     }
     pub fn get_minter(&self) -> String {
         self.query_contract(consts::MINTER_RUNTIME_ARG_NAME).unwrap()

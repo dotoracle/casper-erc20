@@ -32,6 +32,8 @@ pub enum Error {
     RequestIdExist,
     /// request amount too low.
     RequestAmountTooLow,
+    /// request id
+    RequestIdIllFormatted,
     /// User error.
     User(u16),
 }
@@ -46,6 +48,7 @@ const ALREADY_MINT: u16 = u16::MAX - 6;
 const INVALID_FEE: u16 = u16::MAX - 7;
 const REQUEST_ID_EXIST: u16 = u16::MAX - 8;
 const REQUEST_AMOUNT_TOO_LOW: u16 = u16::MAX - 9;
+const REQUEST_ID_ILL_FORMATTED: u16 = u16::MAX - 10;
 
 impl From<Error> for ApiError {
     fn from(error: Error) -> Self {
@@ -60,6 +63,7 @@ impl From<Error> for ApiError {
             Error::InvalidFee => INVALID_FEE,
             Error::RequestIdExist => REQUEST_ID_EXIST,
             Error::RequestAmountTooLow => REQUEST_AMOUNT_TOO_LOW,
+            Error::RequestIdIllFormatted => REQUEST_ID_ILL_FORMATTED,
             Error::User(user_error) => user_error,
         };
         ApiError::User(user_error)

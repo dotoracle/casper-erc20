@@ -179,8 +179,16 @@ mod tests {
     fn should_not_request_bridge_back_with_same_id() {
         let mut fixture = TestFixture::install_contract();
         
-        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), "mint1".to_string(), Sender(fixture.ali));
-        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), "mint1".to_string(), Sender(fixture.ali));
+        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), "1cd657a1f6d9d9824859ad91d632053d9120eb6c72a55b44ee5c9f39b1c7cf84".to_string(), Sender(fixture.ali));
+        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), "1cd657a1f6d9d9824859ad91d632053d9120eb6c72a55b44ee5c9f39b1c7cf84".to_string(), Sender(fixture.ali));
+    }
+
+    #[should_panic(expected = "ApiError::User(65525) [131061]")]
+    #[test]
+    fn should_not_request_ill_formatted_request() {
+        let mut fixture = TestFixture::install_contract();
+        
+        fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), "1cd657a1f6d9d9824859ad91d632053d9120eb6c72a55b44ee5c9f39b1c7cf".to_string(), Sender(fixture.ali));
     }
 
     #[test]
@@ -190,7 +198,7 @@ mod tests {
         assert_eq!(current_index, U256::zero());
         fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), "9b0232c7e0d1da48fe3f0208d96229ece7b5ab4302f034074928e8f3764db6b2".to_string(), Sender(fixture.ali));
         println!("map {:?}", fixture.compute_request_map("9b0232c7e0d1da48fe3f0208d96229ece7b5ab4302f034074928e8f3764db6b2".to_string()));
-        assert_eq!("1cd657a1f6d9d9824859ad91d632053d9120eb6c72a55b44ee5c9f39b1c7cf84", fixture.compute_request_map("9b0232c7e0d1da48fe3f0208d96229ece7b5ab4302f034074928e8f3764db6b2".to_string()));
+        //assert_eq!("1cd657a1f6d9d9824859ad91d632053d9120eb6c72a55b44ee5c9f39b1c7cf84", fixture.compute_request_map("9b0232c7e0d1da48fe3f0208d96229ece7b5ab4302f034074928e8f3764db6b2".to_string()));
         current_index = fixture.read_request_map("9b0232c7e0d1da48fe3f0208d96229ece7b5ab4302f034074928e8f3764db6b2".to_string()).unwrap_or_default();
         assert_eq!(current_index, U256::one());
         //fixture.request_bridge_back(U256::from(1000), U256::zero(), U256::from(1), "receiver_address".to_string(), "mint1".to_string(), Sender(fixture.ali));
@@ -199,14 +207,14 @@ mod tests {
     #[test]
     fn should_request_bridge_back_with_good_fee() {
         let mut fixture = TestFixture::install_contract();
-        fixture.mint(Key::from(fixture.ali), U256::from(2000), U256::zero(), "mint1".to_string(), Sender(fixture.minter));
+        fixture.mint(Key::from(fixture.ali), U256::from(2000), U256::zero(), "9b0232c7e0d1da48fe3f0208d96229ece7b5ab4302f034074928e8f3764db6b2".to_string(), Sender(fixture.minter));
         fixture.change_swap_fee(U256::from(10), Sender(fixture.dev));
         fixture.transfer(Key::from(fixture.bob), U256::from(2000), Sender(fixture.ali));
 
         let dev_balance = fixture.balance_of(Key::from(fixture.dev)).unwrap_or_default();
 
         //bridge 1000
-        fixture.request_bridge_back(U256::from(1000), U256::from(10), U256::from(10), "receiver_address".to_string(), "mint1".to_string(), Sender(fixture.bob));
+        fixture.request_bridge_back(U256::from(1000), U256::from(10), U256::from(10), "receiver_address".to_string(), "0b0232c7e0d1da48fe3f0208d96229ece7b5ab4302f034074928e8f3764db6b2".to_string(), Sender(fixture.bob));
 
         //bob should have less than 1k compared
         let bob_balance = fixture.balance_of(Key::from(fixture.bob)).unwrap_or_default();
