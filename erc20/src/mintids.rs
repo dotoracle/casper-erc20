@@ -26,7 +26,7 @@ pub(crate) fn write_mintid_to(
     mintid: &String
 ) {
     let dictionary_item_key = make_dictionary_item_key(mintid);
-    storage::dictionary_put(mintids_uref, &dictionary_item_key, 1)
+    storage::dictionary_put(mintids_uref, &dictionary_item_key, 1 as u64)
 }
 
 /// Reads an allowance for a owner and spender

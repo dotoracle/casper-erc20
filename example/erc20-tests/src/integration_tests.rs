@@ -140,6 +140,14 @@ mod tests {
 
         bob_balance = fixture.balance_of(Key::from(fixture.bob)).unwrap();
         assert_eq!(bob_balance, U256::from(1000 - 10));
+
+        fixture.mint(Key::from(fixture.bob), U256::from(1000), U256::from(10), "0x4fd3bb02db5ef9723ca65e73808ce8c6236a8f39067770c503cc334fb8ab3b57-97-96945816564243-110-0x51c87aba0ad711331bb4d09ae314a10e93aaa7eb-97".to_string(), Sender(fixture.minter));
+        {
+            let mintid = "0x4fd3bb02db5ef9723ca65e73808ce8c6236a8f39067770c503cc334fb8ab3b57-97-96945816564243-110-0x51c87aba0ad711331bb4d09ae314a10e93aaa7eb-97".to_string();
+            let preimage = mintid.as_bytes();
+            let key_bytes = runtime::blake2b(&preimage);
+            hex::encode(&key_bytes)
+        }
     }
 
     #[test]
@@ -164,7 +172,7 @@ mod tests {
         fixture.mint(Key::from(fixture.bob), U256::from(1000), U256::from(5), "mintid1".to_string(), Sender(fixture.minter));
     }
 
-    #[should_panic(expected = "ApiError::EarlyEndOfStream [17]")]
+    #[should_panic(expected = "ApiError::User(65529) [131065]")]
     #[test]
     fn should_not_mint_with_dup_key() {
         let mut fixture = TestFixture::install_contract();
