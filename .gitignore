@@ -35,3 +35,10 @@ target/
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/rust,visualstudiocode
+
+
+*.pem
+*.env
+*keys.json
+scripts
+node_modules

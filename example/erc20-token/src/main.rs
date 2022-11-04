@@ -4,20 +4,17 @@
 #[cfg(not(target_arch = "wasm32"))]
 compile_error!("target arch should be wasm32: compile with '--target wasm32-unknown-unknown'");
 
+mod detail;
+mod error;
 extern crate alloc;
 
 use alloc::string::String;
 
 use casper_contract::{contract_api::runtime, unwrap_or_revert::UnwrapOrRevert};
-use casper_erc20::{
-    constants::{
-        ADDRESS_RUNTIME_ARG_NAME, AMOUNT_RUNTIME_ARG_NAME, DECIMALS_RUNTIME_ARG_NAME,
-        NAME_RUNTIME_ARG_NAME, OWNER_RUNTIME_ARG_NAME, RECIPIENT_RUNTIME_ARG_NAME,
-        SPENDER_RUNTIME_ARG_NAME, SYMBOL_RUNTIME_ARG_NAME, TOTAL_SUPPLY_RUNTIME_ARG_NAME,
-    },
-    Address, ERC20,
-};
+use casper_erc20::{constants::*, Address, ERC20};
 use casper_types::{CLValue, U256};
+
+use crate::error::ErrorERC20;
 
 #[no_mangle]
 pub extern "C" fn name() {
@@ -66,6 +63,45 @@ pub extern "C" fn approve() {
     let amount: U256 = runtime::get_named_arg(AMOUNT_RUNTIME_ARG_NAME);
 
     ERC20::default().approve(spender, amount).unwrap_or_revert();
+}
+
+#[no_mangle]
+pub extern "C" fn mint() {
+    let owner: Address = detail::get_named_arg_with_user_errors::<Address>(
+        OWNER_RUNTIME_ARG_NAME,
+        ErrorERC20::MissingOwner,
+        ErrorERC20::InvalidOwner,
+    )
+    .unwrap_or_revert();
+
+    let amount: U256 = detail::get_named_arg_with_user_errors::<U256>(
+        AMOUNT_RUNTIME_ARG_NAME,
+        ErrorERC20::MissingMintAmount,
+        ErrorERC20::InvalidMintAmount,
+    )
+    .unwrap_or_revert();
+
+    ERC20::default().mint(owner, amount).unwrap_or_revert_with(ErrorERC20::FailCallToMint);
+}
+
+
+#[no_mangle]
+pub extern "C" fn burn() {
+    let owner: Address = detail::get_named_arg_with_user_errors::<Address>(
+        OWNER_RUNTIME_ARG_NAME,
+        ErrorERC20::MissingOwner,
+        ErrorERC20::InvalidOwner,
+    )
+    .unwrap_or_revert();
+
+    let amount: U256 = detail::get_named_arg_with_user_errors::<U256>(
+        AMOUNT_RUNTIME_ARG_NAME,
+        ErrorERC20::MissingMintAmount,
+        ErrorERC20::InvalidMintAmount,
+    )
+    .unwrap_or_revert();
+
+    ERC20::default().burn(owner, amount).unwrap_or_revert_with(ErrorERC20::FailCallToBurn);
 }
 
 #[no_mangle]

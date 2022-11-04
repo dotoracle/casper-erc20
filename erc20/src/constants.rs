@@ -52,3 +52,6 @@ pub const SYMBOL_RUNTIME_ARG_NAME: &str = "symbol";
 pub const DECIMALS_RUNTIME_ARG_NAME: &str = "decimals";
 /// Name of `total_supply` runtime argument.
 pub const TOTAL_SUPPLY_RUNTIME_ARG_NAME: &str = "total_supply";
+
+pub const MINT_ENTRY_POINT_NAME : &str = "mint";
+pub const BURN_ENTRY_POINT_NAME : &str = "burn";
