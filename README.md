@@ -1,6 +1,8 @@
-# Casper ERC20
+# DotOracle's rust smart contracts for Wrapped ERC20 token on Casper
 
-A library and example implementation of ERC20 token for the Casper network.
+This repo is a fork of [Casper-ERC20](https://github.com/casper-ecosystem/erc20) and is used as code base for wrapped ERC20 token on Casper network
+
+All changes made by DotOracle team can be referred at https://github.com/dotoracle/casper-erc20/tree/minter-role
 
 ## Install
 Make sure the `wasm32-unknown-unknown` Rust target is installed.
