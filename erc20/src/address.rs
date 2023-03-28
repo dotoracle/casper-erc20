@@ -1,9 +1,10 @@
 //! Implementation of an `Address` which refers either an account hash, or a contract hash.
-use alloc::vec::Vec;
+use alloc::{vec::Vec, string::ToString};
+use casper_contract::contract_api::runtime;
 use casper_types::{
     account::AccountHash,
     bytesrepr::{self, FromBytes, ToBytes},
-    CLType, CLTyped, ContractPackageHash, Key,
+    CLType, CLTyped, ContractPackageHash, Key, ApiError,
 };
 
 /// An enum representing an [`AccountHash`] or a [`ContractPackageHash`].
@@ -31,6 +32,18 @@ impl Address {
             Some(v)
         } else {
             None
+        }
+    }
+}
+
+impl ToString for Address {
+    fn to_string(&self) -> alloc::string::String {
+        if self.as_account_hash().is_some() {
+            self.as_account_hash().unwrap().to_string()
+        } else if self.as_contract_package_hash().is_some() {
+            self.as_contract_package_hash().unwrap().to_string()
+        } else {
+            runtime::revert(ApiError::ValueNotFound)
         }
     }
 }

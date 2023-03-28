@@ -25,6 +25,7 @@ pub mod entry_points;
 mod error;
 mod mintids;
 mod request_map;
+mod event;
 
 use alloc::string::{String, ToString};
 
@@ -604,8 +605,17 @@ impl ERC20 {
         named_keys.insert("origin_chainid".to_string(), origin_chainid_key);
         named_keys.insert("origin_contract_address".to_string(), origin_contract_address_key);
 
-        let (contract_hash, _version) =
-            storage::new_locked_contract(entry_points, Some(named_keys), None, None);
+        let (contract_package_hash, _) = storage::create_contract_package_at_hash();
+        named_keys.insert("contract_package_hash".to_string(), Key::from(contract_package_hash));
+
+        let (contract_hash, _version) = storage::add_contract_version(
+            contract_package_hash,
+            entry_points,
+            named_keys
+        );
+
+        // let (contract_hash, _version) =
+        //     storage::new_locked_contract(entry_points, Some(named_keys), None, None);
 
         // Hash of the installed contract will be reachable through named keys.
         runtime::put_key(contract_key_name, Key::from(contract_hash));

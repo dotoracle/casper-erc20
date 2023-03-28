@@ -4,7 +4,7 @@ use alloc::string::String;
 use casper_contract::{contract_api::storage, unwrap_or_revert::UnwrapOrRevert};
 use casper_types::{bytesrepr::ToBytes, URef, U256};
 
-use crate::{constants::BALANCES_KEY_NAME, detail, error::Error, Address};
+use crate::{constants::BALANCES_KEY_NAME, detail, error::Error, Address, event::{emit, ERC20Event}};
 
 /// Creates a dictionary item key for a dictionary item.
 #[inline]
@@ -70,6 +70,12 @@ pub(crate) fn transfer_balance(
 
     write_balance_to(balances_uref, sender, new_sender_balance);
     write_balance_to(balances_uref, recipient, new_recipient_balance);
+
+    emit(&ERC20Event::Transfer {
+        from: sender,
+        to: recipient,
+        value: amount,
+    });
 
     Ok(())
 }
