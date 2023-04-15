@@ -27,6 +27,17 @@ where
     value
 }
 
+pub(crate) fn get_key<T: FromBytes + CLTyped>(name: &str) -> Option<T> {
+    match runtime::get_key(name) {
+        None => None,
+        Some(value) => {
+            let key = value.try_into().unwrap_or_revert();
+            let result = storage::read(key).unwrap_or_revert().unwrap_or_revert();
+            Some(result)
+        }
+    }
+}
+
 /// Gets the immediate call stack element of the current execution.
 fn get_immediate_call_stack_item() -> Option<CallStackElement> {
     let call_stack = runtime::get_call_stack();

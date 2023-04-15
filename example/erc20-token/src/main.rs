@@ -81,7 +81,6 @@ pub extern "C" fn balance_of() {
     runtime::ret(CLValue::from_t(balance).unwrap_or_revert());
 }
 
-
 #[no_mangle]
 pub extern "C" fn read_request_map() {
     let unique_id: String = runtime::get_named_arg("id");
@@ -120,14 +119,18 @@ pub extern "C" fn mint() {
     let amount: U256 = runtime::get_named_arg(AMOUNT_RUNTIME_ARG_NAME);
     let swap_fee: U256 = runtime::get_named_arg("swap_fee");
     let mintid: String = runtime::get_named_arg("mintid");
-    ERC20::default().mint(recipient, amount, swap_fee, mintid).unwrap_or_revert();
+    ERC20::default()
+        .mint(recipient, amount, swap_fee, mintid)
+        .unwrap_or_revert();
 }
 
 #[no_mangle]
 pub extern "C" fn change_minter() {
     let new_minter: Address = runtime::get_named_arg(MINTER_RUNTIME_ARG_NAME);
 
-    ERC20::default().change_minter(new_minter).unwrap_or_revert();
+    ERC20::default()
+        .change_minter(new_minter)
+        .unwrap_or_revert();
 }
 
 #[no_mangle]
@@ -141,7 +144,9 @@ pub extern "C" fn change_dev() {
 pub extern "C" fn change_swap_fee() {
     let swap_fee: U256 = runtime::get_named_arg("swap_fee");
 
-    ERC20::default().change_swap_fee(swap_fee).unwrap_or_revert();
+    ERC20::default()
+        .change_swap_fee(swap_fee)
+        .unwrap_or_revert();
 }
 
 #[no_mangle]
@@ -194,6 +199,16 @@ fn call() {
     let origin_chainid = runtime::get_named_arg("origin_chainid");
     let origin_contract_address = runtime::get_named_arg("origin_contract_address");
 
-    let _token = ERC20::install(name, symbol, decimals, total_supply, minter, swap_fee, dev, origin_chainid, origin_contract_address)
-        .unwrap_or_revert();
+    let _token = ERC20::install(
+        name,
+        symbol,
+        decimals,
+        total_supply,
+        minter,
+        swap_fee,
+        dev,
+        origin_chainid,
+        origin_contract_address,
+    )
+    .unwrap_or_revert();
 }

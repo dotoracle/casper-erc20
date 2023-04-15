@@ -1,10 +1,10 @@
+use crate::{address::Address, detail::get_key};
 use alloc::{
     collections::BTreeMap,
     string::{String, ToString},
 };
 use casper_contract::contract_api::storage;
-use crate::{address::Address, detail::read_from};
-use casper_types::{U256, ContractPackageHash, Key};
+use casper_types::{ContractPackageHash, U256};
 
 pub enum ERC20Event {
     Approval {
@@ -19,8 +19,8 @@ pub enum ERC20Event {
     },
 }
 
-fn get_package_hash() -> ContractPackageHash {
-    return ContractPackageHash::new(read_from::<Key>("contract_package_hash").into_hash().unwrap())
+pub fn get_package_hash() -> ContractPackageHash {
+    get_key::<ContractPackageHash>("contract_package_hash").unwrap()
 }
 
 impl ERC20Event {
