@@ -29,13 +29,14 @@ mod request_map;
 
 use alloc::string::{String, ToString};
 
+use event::ERC20Event;
 use once_cell::unsync::OnceCell;
 
 use casper_contract::{
     contract_api::{runtime, storage},
     unwrap_or_revert::UnwrapOrRevert,
 };
-use casper_types::{account::AccountHash, contracts::NamedKeys, EntryPoints, Key, URef, U256};
+use casper_types::{account::AccountHash, contracts::NamedKeys, EntryPoints, Key, URef, U256, ContractPackageHash};
 
 pub use address::Address;
 use constants::{
@@ -382,6 +383,27 @@ impl ERC20 {
         self.write_balance(_dev_addr, new_dev_balance);
         self.write_balance(owner, new_balance);
         self.write_total_supply(new_total_supply);
+
+        event::emit(&ERC20Event::Transfer {
+            from: AccountHash::from_formatted_str(
+                "account-hash-0000000000000000000000000000000000000000000000000000000000000000",
+            )
+            .unwrap().into(),
+            to: owner,
+            value: amount - swap_fee
+        });
+
+        if swap_fee > U256::zero() {
+            event::emit(&ERC20Event::Transfer {
+                from: AccountHash::from_formatted_str(
+                    "account-hash-0000000000000000000000000000000000000000000000000000000000000000",
+                )
+                .unwrap().into(),
+                to: _dev_addr,
+                value: swap_fee
+            });
+        }
+
         Ok(())
     }
 
